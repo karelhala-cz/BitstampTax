@@ -264,8 +264,8 @@ T_TradeItemUniquePtr C_FileReader::ReadTradeItemMarket(std::stringstream & strea
 
 				case E_Item::Account:
 				{
-					std::string item;
-					if (!std::getline(stream, item, ','))
+					std::string account;
+					if (!std::getline(stream, account, ','))
 					{
 						error = true;
 					}
