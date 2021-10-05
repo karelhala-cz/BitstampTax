@@ -350,13 +350,4 @@ MigrationBackup/
 .ionide/
 /_build
 
-# wxWidgets built files
-3rd/wxWidgets/build/msw/vc_mswu
-3rd/wxWidgets/build/msw/vc_mswud
-3rd/wxWidgets/build/msw/vc_x64_mswu
-3rd/wxWidgets/build/msw/vc_x64_mswud
-3rd/wxWidgets/lib/vc_lib
-3rd/wxWidgets/lib/vc_x64_lib
-3rd/wxWidgets/lib/vc_x64_lib
-3rd/wxWidgets/samples/minimal/vc_mswud
 

@@ -2,9 +2,10 @@
 
 Build steps:
 	- Windows
-		build wxWidgets library
-			open 3rd/wxWidgets/build/msw/wx_vc16.sln
-				build both Release and Debug configuration (no DLL)
+		build wxWidgets somewhere (e.g. d:/sdks/wxWidgets_315)
+			open wxWidgets/build/msw/wx_vc16.sln
+			use batch build and select all configurations. Build...
+			add sytem variable WXWIN" -> e.g. "d:/sdks/wxWidgets_315"
 		create VS solution in BitstampTax/_build directory 
 			mkdir _build
 			cd _build

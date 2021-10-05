@@ -6,6 +6,8 @@
 #include "BitstampTax.h"
 #include "MainFrame.h"
 
+wxIMPLEMENT_APP(C_BitstampTax);
+
 bool C_BitstampTax::OnInit()
 {
     m_MainFrame = new C_MainFrame();
