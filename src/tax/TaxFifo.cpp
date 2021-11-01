@@ -24,7 +24,10 @@ bool C_TaxFifo::Process(C_TradeBook const & book)
 		{
 			C_Tax & taxYear(GetTaxYear(GetYear(itemMarket->GetTime())));
 
-			taxYear.AddExpenditure(itemMarket->GetFee());
+			if (itemMarket->IsFeeValid())
+			{
+				taxYear.AddExpenditure(itemMarket->GetFee());
+			}
 
 			switch (itemMarket->GetTradeType())
 			{
@@ -100,20 +103,45 @@ bool C_TaxFifo::FindPairs(T_TradeItems const & buys, T_TradeItems const & sells)
 			{
 				if (sell->GetTime() >= (*buyIt)->GetTime())
 				{
-					if (sellAmountToProcess <= boughtAmountToProcess)
+					if (sellAmountToProcess < boughtAmountToProcess)
 					{
 						AddPair(sellAmountToProcess, *(*buyIt), *sell);
 						boughtAmountToProcess -= sellAmountToProcess;
-						break;
+						sellAmountToProcess.Zero();
 					}
-					else
+					else if (sellAmountToProcess > boughtAmountToProcess)
 					{
 						AddPair(boughtAmountToProcess, *(*buyIt), *sell);
 						sellAmountToProcess -= boughtAmountToProcess;
 						boughtAmountToProcess.Zero();
+					}
+					else
+					{
+						AddPair(sellAmountToProcess, *(*buyIt), *sell);
+						boughtAmountToProcess.Zero();
+						sellAmountToProcess.Zero();
+					}
 
+					if (boughtAmountToProcess.IsZero())
+					{
 						buyIt++;
-						boughtAmountToProcess = (*buyIt)->GetAmount();
+						if (buyIt != buys.end())
+						{
+							boughtAmountToProcess = (*buyIt)->GetAmount();
+						}
+						else
+						{
+							if (!sellAmountToProcess.IsZero())
+							{
+								error = true;
+								m_ErrorMsg += "Buy item not found!\n";
+							}
+						}
+					}
+
+					if (sellAmountToProcess.IsZero())
+					{
+						break;
 					}
 				}
 				else

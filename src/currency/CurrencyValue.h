@@ -31,6 +31,9 @@ public:
 
 	C_CurrencyValue operator *(C_Decimal const & other) const;
 	
+	bool operator <(C_CurrencyValue const & other) const;
+	bool operator >(C_CurrencyValue const & other) const;
+	bool operator ==(C_CurrencyValue const & other) const;
 	bool operator <=(C_CurrencyValue const & other) const;
 
 	E_CurrencyType	GetType() const { return m_Type; }
@@ -39,6 +42,7 @@ public:
 	bool IsZero() const { return m_Value.IsZero(); }
 	void Zero() { m_Value.Zero(); }
 
+	std::string GetAsString() const;
 	void PrintData(std::ostringstream & str) const;
 
 private:

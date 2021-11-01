@@ -4,18 +4,25 @@
 // License:	  
 //*********************************************************************************************************************
 
-#include "TradeItemDeposit.h"
+#include "TradeItemWithdrawal.h"
 
-C_TradeItemDeposit::C_TradeItemDeposit(size_t const inputFileLine, std::time_t const time, T_CurrencyValueConstPtr && amount)
+C_TradeItemWithdrawal::C_TradeItemWithdrawal(size_t const inputFileLine,
+	std::time_t const time,
+	T_CurrencyValueConstPtr && amount,
+	T_CurrencyValueConstPtr && fee)
 	: T_Super(inputFileLine, time, std::move(amount))
+	, m_Fee(std::move(fee))
 {
 }
 
 //virtual
-void C_TradeItemDeposit::PrintData(std::ostringstream & str)
+void C_TradeItemWithdrawal::PrintData(std::ostringstream & str)
 {
-	str << "[deposit] ";
+	str << "[withdrawal] ";
 	
 	T_Super::PrintData(str);
+
+	str << ", fee: ";
+	m_Fee->PrintData(str);
 }
 

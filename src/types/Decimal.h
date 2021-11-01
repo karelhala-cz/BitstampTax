@@ -27,6 +27,9 @@ public:
 	C_Decimal operator *(C_Decimal const & other) const;
 	C_Decimal operator *=(C_Decimal const & other);
 	
+	bool operator <(C_Decimal const & other) const;
+	bool operator >(C_Decimal const & other) const;
+	bool operator ==(C_Decimal const & other) const;
 	bool operator <=(C_Decimal const & other) const;
 
 	T_E	GetE() const { return m_E; }
@@ -36,6 +39,7 @@ public:
 	bool IsZero() const { return m_Value == 0; }
 	void Zero() { m_Value = 0; }
 
+	std::string GetAsString() const;
 	void PrintData(std::ostringstream & str) const;
 
 private:

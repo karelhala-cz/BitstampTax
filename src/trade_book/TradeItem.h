@@ -12,7 +12,7 @@
 class C_TradeItem
 {
 public:
-	C_TradeItem(std::time_t	const time, T_CurrencyValueConstPtr && amount);
+	C_TradeItem(size_t const inputFileLine, std::time_t	const time, T_CurrencyValueConstPtr && amount);
 
 	virtual ~C_TradeItem() {}
 
@@ -22,6 +22,7 @@ public:
 	virtual void PrintData(std::ostringstream & str);
 
 private:
+	size_t m_InputFileLine;
 	std::time_t	m_Time;
 	T_CurrencyValueConstPtr	m_Amount;
 };

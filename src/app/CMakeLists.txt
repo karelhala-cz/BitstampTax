@@ -9,7 +9,6 @@ source_group("" FILES ${PROGRAM_SOURCES})
  
  # Define a variable containing a list of source files for the project
 set(SRC_FILES
-    main.cpp
 	BitstampTax.h
 	BitstampTax.cpp
 	Ids.h

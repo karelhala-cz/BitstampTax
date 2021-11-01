@@ -12,7 +12,7 @@
 #include "trade_book/TradeItemMarket.h"
 #include <vector>
 #include <string>
-
+#include <assert.h>
 
 class C_TaxFifo
 {
@@ -22,6 +22,17 @@ public:
 	C_TaxFifo();
 
 	bool Process(C_TradeBook const & book);
+
+	size_t GetPairsCount() const { return m_Pairs.size(); }
+	C_TradePair const & GetTradePair(size_t const index) const { assert(index < m_Pairs.size()); return m_Pairs.at(index); }
+
+	size_t GetTaxCount() const { return m_Tax.size(); }
+
+	template<typename Fn>
+	void EnumerateTradePairs(Fn & fn) const;
+
+	template<typename Fn>
+	void EnumerateTaxes(Fn & fn) const;
 
 	void PrintTax(std::ostringstream & str);
 
@@ -41,3 +52,21 @@ private:
 	std::vector<C_Tax> m_Tax;
 	std::string m_ErrorMsg;
 };
+
+template<typename Fn>
+void C_TaxFifo::EnumerateTradePairs(Fn & fn) const
+{
+	for (C_TradePair const & pair : m_Pairs)
+	{
+		fn(pair);
+	}
+}
+
+template<typename Fn>
+void C_TaxFifo::EnumerateTaxes(Fn & fn) const
+{
+	for (C_Tax const & tax : m_Tax)
+	{
+		fn(tax);
+	}
+}

@@ -22,9 +22,28 @@ public:
 	void AddItem(std::unique_ptr<C_TradeItem> && item);
 	void SetTradeItems(T_TradeItems && items);
 
+	template<typename Fn>
+	void EnumerateTradeItemsMarket(Fn & fn) const;
+
+	bool IsEmpty() const { return m_TradeItems.empty(); }
 	T_TradeItems const & GetData() const { return m_TradeItems; }
+
 	void PrintData(std::ostringstream & str);
 
 private:
 	T_TradeItems m_TradeItems;
 };
+
+
+template<typename Fn>
+void C_TradeBook::EnumerateTradeItemsMarket(Fn & fn) const
+{
+	for (T_TradeItemUniquePtr const & item : GetData())
+	{
+		C_TradeItemMarket const * const itemMarket (dynamic_cast<C_TradeItemMarket const *>(item.get()));
+		if (itemMarket != nullptr)
+		{
+			fn(*itemMarket);
+		}
+	}
+}

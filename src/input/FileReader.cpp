@@ -6,6 +6,7 @@
 
 #include "FileReader.h"
 #include "trade_book/TradeItemDeposit.h"
+#include "trade_book/TradeItemWithdrawal.h"
 #include "trade_book/TradeItemMarket.h"
 #include "currency/CurrencyValue.h"
 #include <iostream>
@@ -40,38 +41,55 @@ C_FileReader::C_FileReader(std::string const& filename)
 
 bool C_FileReader::Read()
 {
-	bool retVal(false);
+	bool error(false);
 
 	std::ifstream fileStream(m_FileName);
 	if (fileStream)
 	{
-		if (ReadHeader(fileStream))
+		ReadFileLines(fileStream);
+		if (ReadHeaderLine())
 		{
-			if (ReadData(fileStream))
+			for (size_t i = 1; i < m_FileLines.size(); ++i)
 			{
-				retVal = true;
+				if (!ReadDataLine(i))
+				{
+					error = true;	//m_ErrorMsg has been already set
+					break;
+				}
 			}
+		}
+		else
+		{
+			error = true;	//m_ErrorMsg has been already set
 		}
 	}
 	else
 	{
+		error = true;
 		m_ErrorMsg += "Cannot open file ";
 		m_ErrorMsg += m_FileName;
 		m_ErrorMsg += "\n";
 	}
 
-	return retVal;
+	return !error;
 }
 
-bool C_FileReader::ReadHeader(std::ifstream& stream)
+void C_FileReader::ReadFileLines(std::ifstream & stream)
 {
-	bool itemFound(false);
+	std::string line;
+	while (std::getline(stream, line))
+	{
+		m_FileLines.push_back(line);
+	}
+}
+
+bool C_FileReader::ReadHeaderLine()
+{
 	bool error(false);
 
-	std::string line;
-	if (std::getline(stream, line))
+	if (!m_FileLines.empty())
 	{
-		std::stringstream lineStream(line);
+		std::stringstream lineStream(m_FileLines.at(0));
 
 		std::string item;
 		while (std::getline(lineStream, item, ','))
@@ -81,64 +99,65 @@ bool C_FileReader::ReadHeader(std::ifstream& stream)
 			if (it != m_ItemNames.end())
 			{
 				m_Header.emplace_back(it->second);
-				itemFound = true;
 			}
 			else
 			{
 				error = true;
-				m_ErrorMsg += "Cannot read header item ";
+				m_ErrorMsg += "Cannot read header line item ";
 				m_ErrorMsg += item;
 				m_ErrorMsg += "\n";
 				break;
 			}
 		}
 	}
-	else
-	{
-		error = true;
-		m_ErrorMsg += "Cannot read header line\n";
-	}
 
 	return !error;
 }
 
-bool C_FileReader::ReadData(std::ifstream & stream)
+bool C_FileReader::ReadDataLine(size_t const lineIndex)
 {
 	bool error(false);
 
-	std::string line;
-	while (std::getline(stream, line))
+	if (lineIndex < m_FileLines.size())
 	{
-		std::stringstream lineStream (line);
+		std::stringstream lineStream (m_FileLines.at(lineIndex));
 
 		std::string item;
 		if (std::getline(lineStream, item, ','))
 		{
 			std::unique_ptr<C_TradeItem> tradeItem;
-
+	
 			if (item.compare("Deposit") == 0)
 			{
-				tradeItem = ReadTradeItemDeposit(lineStream);
+				tradeItem = ReadTradeItemDeposit(lineIndex, lineStream);
+			}
+			else if (item.compare("Withdrawal") == 0)
+			{
+				tradeItem = ReadTradeItemWithdrawal(lineIndex, lineStream);
 			}
 			else if (item.compare("Market") == 0)
 			{
-				tradeItem = ReadTradeItemMarket(lineStream);
+				tradeItem = ReadTradeItemMarket(lineIndex, lineStream);
 			}
 			else
 			{
 				error = true;
 				m_ErrorMsg += "Bad data format\n";
-				break;
 			}
 
 			m_TradeItems.emplace_back(std::move(tradeItem));
 		}
 	}
+	else
+	{
+		error = true;
+		m_ErrorMsg += "Invalid line index\n";
+	}
 
 	return !error;
 }
 
-T_TradeItemUniquePtr C_FileReader::ReadTradeItemDeposit(std::stringstream & stream)
+T_TradeItemUniquePtr C_FileReader::ReadTradeItemDeposit(size_t const inputFileLine, std::stringstream & stream)
 {
 	bool error (false);
 
@@ -220,13 +239,112 @@ T_TradeItemUniquePtr C_FileReader::ReadTradeItemDeposit(std::stringstream & stre
 	if (!error)
 	{
 		std::time_t time = mktime(&tmTime);
-		retVal = std::make_unique<C_TradeItemDeposit>(time, std::move(amount));
+		retVal = std::make_unique<C_TradeItemDeposit>(inputFileLine, time, std::move(amount));
 	}
 
 	return retVal;
 }
 
-T_TradeItemUniquePtr C_FileReader::ReadTradeItemMarket(std::stringstream & stream)
+T_TradeItemUniquePtr C_FileReader::ReadTradeItemWithdrawal(size_t const inputFileLine, std::stringstream & stream)
+{
+	bool error (false);
+
+	std::tm tmTime;
+	T_CurrencyValueConstPtr amount;
+	T_CurrencyValueConstPtr fee;
+
+	for (size_t itemCounter = 1; itemCounter < m_Header.size(); ++itemCounter)
+	{
+		E_Item const itemType (m_Header.at(itemCounter));
+
+		switch (itemType)
+		{
+			case E_Item::Datetime:
+			{
+				if (!ReadTime(stream, tmTime))
+				{
+					error = true;
+				}
+			}
+			break;
+
+			case E_Item::Account:
+			{
+				std::string item;
+				if (!std::getline(stream, item, ','))
+				{
+					error = true;
+				}
+			}
+			break;
+
+			case E_Item::Amount:
+			{
+				amount = ReadCurrencyValue(stream);
+				if (amount == nullptr)
+				{
+					error = true;
+				}
+			}
+			break;
+
+			case E_Item::Value:
+			{
+				if (!ReadEmptyString(stream))
+				{
+					error = true;
+				}
+			}
+			break;
+
+			case E_Item::Rate:
+			{
+				if (!ReadEmptyString(stream))
+				{
+					error = true;
+				}
+			}
+			break;
+
+			case E_Item::Fee:
+			{
+				fee = ReadCurrencyValue(stream);
+				if (fee == nullptr)
+				{
+					error = true;
+				}
+			}
+			break;
+
+			case E_Item::SubType:
+			{
+
+			}
+			break;
+
+			default:
+				error = true;
+				m_ErrorMsg += "Unexpected item type\n";
+		}
+
+		if (error)
+		{
+			break;
+		}
+	}
+
+	T_TradeItemUniquePtr retVal;
+
+	if (!error)
+	{
+		std::time_t time = mktime(&tmTime);
+		retVal = std::make_unique<C_TradeItemWithdrawal>(inputFileLine, time, std::move(amount), std::move(fee));
+	}
+
+	return retVal;
+}
+
+T_TradeItemUniquePtr C_FileReader::ReadTradeItemMarket(size_t const inputFileLine, std::stringstream & stream)
 {
 	bool error (false);
 
@@ -305,10 +423,7 @@ T_TradeItemUniquePtr C_FileReader::ReadTradeItemMarket(std::stringstream & strea
 				case E_Item::Fee:
 				{
 					fee = ReadCurrencyValue(stream);
-					if (fee == nullptr)
-					{
-						error = true;
-					}
+					// undefined fee is allowed
 				}
 				break;
 
@@ -324,13 +439,16 @@ T_TradeItemUniquePtr C_FileReader::ReadTradeItemMarket(std::stringstream & strea
 				case E_Item::LastToGetCount:
 				default:
 				{
-					assert(false);	// Invalid item!
+					error = true;	// Invalid item!
 				}
 				break;
 			}
 		}
 	}
-	return std::make_unique<C_TradeItemMarket>(time, std::move(amount), std::move(value), std::move(rate), std::move(fee), tradeType);
+
+	assert(!error);
+
+	return std::make_unique<C_TradeItemMarket>(inputFileLine, time, std::move(amount), std::move(value), std::move(rate), std::move(fee), tradeType);
 }
 
 bool C_FileReader::ReadTime(std::stringstream & stream, std::tm & time)
@@ -396,7 +514,11 @@ bool C_FileReader::ReadTime(std::stringstream & stream, std::tm & time)
 	{
 		if (strcmp(item.c_str(), " PM") == 0)
 		{
-			time.tm_hour += 12;
+			// 12:59 PM is still valid!
+			if (time.tm_hour < 12)
+			{
+				time.tm_hour += 12;
+			}
 		}
 		else if (strcmp(item.c_str(), " AM") == 0)
 		{
@@ -493,76 +615,88 @@ T_CurrencyValueConstPtr	C_FileReader::ReadCurrencyValue(std::stringstream & stre
 
 	bool error (false);
 	
-	std::string valueStr;
-	int64_t value (0);
-	int8_t valueDecimalShift (0);
-	E_CurrencyType currencyType (E_CurrencyType::Count);
-	if (std::getline(stream, valueStr, ' '))
+	std::string currencyValueStr;
+	if (std::getline(stream, currencyValueStr, ','))
 	{
-		if (!valueStr.empty())
+		std::string valueStr;
+		int64_t value (0);
+		int8_t valueDecimalShift (0);
+		E_CurrencyType currencyType (E_CurrencyType::Count);
+		std::size_t const spacePos = currencyValueStr.find(' ');
+		if (spacePos != std::string::npos)
 		{
-			int64_t figureCount (0);
-			int64_t decimalMultiplier (1);
-			for (int decimalPosition = static_cast<int>(valueStr.length() - 1); decimalPosition >= 0; --decimalPosition)
+			valueStr = currencyValueStr.substr(0, spacePos);
+			if (!valueStr.empty())
 			{
-				char const character (valueStr.at(decimalPosition));
-				if ((character >= '0') && (character <= '9'))
+				int64_t figureCount (0);
+				int64_t decimalMultiplier (1);
+				for (int decimalPosition = static_cast<int>(valueStr.length() - 1); decimalPosition >= 0; --decimalPosition)
 				{
-					int64_t number (character - '0');
-					if (figureCount > 0)
+					char const character (valueStr.at(decimalPosition));
+					if ((character >= '0') && (character <= '9'))
 					{
-						number *= decimalMultiplier;
-					}
+						int64_t number (character - '0');
+						if (figureCount > 0)
+						{
+							number *= decimalMultiplier;
+						}
 
-					value += number;
-					figureCount++;
-					decimalMultiplier *= 10;
-				}
-				else if (character == '.')
-				{
-					if (figureCount > 0)
+						value += number;
+						figureCount++;
+						decimalMultiplier *= 10;
+					}
+					else if (character == '.')
 					{
-						assert(-figureCount > std::numeric_limits<int8_t>::min());
-						valueDecimalShift = static_cast<int8_t>(-figureCount);
+						if (figureCount > 0)
+						{
+							assert(-figureCount > std::numeric_limits<int8_t>::min());
+							valueDecimalShift = static_cast<int8_t>(-figureCount);
+						}
+					}
+					else
+					{
+						error = true;
+						break;
 					}
 				}
-				else
-				{
-					error = true;
-					break;
-				}
-			}
-		}
-	}
-	else
-	{
-		error = true;
-	}
-
-	if (!error)
-	{
-		std::string currencyTypeStr;
-		if (std::getline(stream, currencyTypeStr, ','))
-		{
-			if (currencyTypeStr.compare("EUR") == 0)
-			{
-				currencyType = E_CurrencyType::EUR;
-			}
-			else if (currencyTypeStr.compare("BTC") == 0)
-			{
-				currencyType = E_CurrencyType::BTC;
 			}
 			else
 			{
 				error = true;
 			}
-		}
 
-		if (!error)
+			if (!error)
+			{
+				std::string const currencyTypeStr = currencyValueStr.substr(spacePos + 1, currencyValueStr.length());
+				if (currencyTypeStr.compare("EUR") == 0)
+				{
+					currencyType = E_CurrencyType::EUR;
+				}
+				else if (currencyTypeStr.compare("BTC") == 0)
+				{
+					currencyType = E_CurrencyType::BTC;
+				}
+				else
+				{
+					error = true;
+				}
+
+				if (!error)
+				{
+					retVal = std::make_unique<C_CurrencyValue>(currencyType, value, valueDecimalShift);
+				}
+			}
+		}
+		else
 		{
-			retVal = std::make_unique<C_CurrencyValue>(currencyType, value, valueDecimalShift);
+			error = true;	// report outside?
 		}
 	}
+	else
+	{
+		error = true;	//report outside?
+	}
+
 
 	return std::move(retVal);
 }
@@ -588,3 +722,24 @@ bool C_FileReader::ReadTradeType(std::stringstream & stream, E_TradeType & type)
 
 	return success;
 }
+
+bool C_FileReader::ReadEmptyString(std::stringstream & stream)
+{
+	bool error(false);
+
+	std::string item;
+	if (std::getline(stream, item, ','))
+	{
+		if (item.length() > 0)
+		{
+			error = true;
+		}
+	}
+	else
+	{
+		error = true;
+	}
+
+	return !error;
+}
+

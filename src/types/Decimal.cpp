@@ -38,6 +38,27 @@ C_Decimal C_Decimal::operator +=(C_Decimal const & other)
 	return *this;
 }
 
+bool C_Decimal::operator <(C_Decimal const & other) const
+{
+	assert(m_E == other.m_E);
+
+	return m_Value < other.m_Value;
+}
+
+bool C_Decimal::operator >(C_Decimal const & other) const
+{
+	assert(m_E == other.m_E);
+
+	return m_Value > other.m_Value;
+}
+
+bool C_Decimal::operator ==(C_Decimal const & other) const
+{
+	assert(m_E == other.m_E);
+
+	return m_Value == other.m_Value;
+}
+
 bool C_Decimal::operator <=(C_Decimal const & other) const
 {
 	assert(m_E == other.m_E);
@@ -90,6 +111,13 @@ void C_Decimal::Normalize(C_Decimal::T_E const & e)
 		assert(m_Value % 10 == 0);
 		m_Value /= 10;
 	}
+}
+
+std::string C_Decimal::GetAsString() const
+{
+	std::ostringstream str;
+	PrintData(str);
+	return str.str();
 }
 
 void C_Decimal::PrintData(std::ostringstream & str) const

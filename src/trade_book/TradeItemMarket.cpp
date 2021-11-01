@@ -6,13 +6,14 @@
 
 #include "TradeItemMarket.h"
 
-C_TradeItemMarket::C_TradeItemMarket(std::time_t const time,
+C_TradeItemMarket::C_TradeItemMarket(size_t const inputFileLine,
+	std::time_t const time,
 	T_CurrencyValueConstPtr&& amount,
 	T_CurrencyValueConstPtr&& value,
 	T_CurrencyValueConstPtr&& rate,
 	T_CurrencyValueConstPtr&& fee,
 	E_TradeType const type)
-	: T_Super(time, std::move(amount))
+	: T_Super(inputFileLine, time, std::move(amount))
 	, m_Value(std::move(value))
 	, m_Rate(std::move(rate))
 	, m_Fee(std::move(fee))
