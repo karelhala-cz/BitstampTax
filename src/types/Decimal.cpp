@@ -11,9 +11,15 @@
 
 C_Decimal C_Decimal::operator -(C_Decimal const & other) const
 {
-	assert(m_E == other.m_E);
-	
-	return C_Decimal(m_Value - other.m_Value, m_E);
+	T_E const minE (std::min(m_E, other.m_E));
+
+	C_Decimal normalized(*this);
+	normalized.Normalize(minE);
+
+	C_Decimal otherNormalized(other);
+	otherNormalized.Normalize(minE);
+
+	return C_Decimal(normalized.m_Value - otherNormalized.m_Value, m_E);
 }
 
 C_Decimal C_Decimal::operator -=(C_Decimal const & other)

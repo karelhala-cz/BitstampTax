@@ -6,10 +6,10 @@
 
 #include "Tax.h"
 
-C_Tax::C_Tax(T_Year const year)
+C_Tax::C_Tax(T_Year const year, T_CurrencyType const & currencyType)
 	: m_Year(year)
-	, m_Expenditures(E_CurrencyType::EUR)
-	, m_Receipts(E_CurrencyType::EUR)
+	, m_Expenditures(currencyType)
+	, m_Receipts(currencyType)
 {
 }
 

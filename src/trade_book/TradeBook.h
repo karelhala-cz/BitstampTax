@@ -7,6 +7,7 @@
 #pragma once
 
 #include "TradeItemFwd.h"
+#include <currency/CurrencyType.h>
 #include <vector>
 #include <memory>
 
@@ -27,6 +28,8 @@ public:
 
 	bool IsEmpty() const { return m_TradeItems.empty(); }
 	T_TradeItems const & GetData() const { return m_TradeItems; }
+
+	T_CurrencyType AssessUserCurrency() const;
 
 	void PrintData(std::ostringstream & str);
 

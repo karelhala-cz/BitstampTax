@@ -18,11 +18,11 @@ public:
 	typedef int64_t T_Value;
 
 public:
-	C_CurrencyValue() : m_Type(E_CurrencyType::Count) {}
-	C_CurrencyValue(E_CurrencyType const type) : m_Type(type) {}
-	C_CurrencyValue(E_CurrencyType const type, T_Value const value) : m_Type(type), m_Value(value) {}
-	C_CurrencyValue(E_CurrencyType const type, T_Value const value, T_E const e) : m_Type(type), m_Value(value, e) {}
-	C_CurrencyValue(E_CurrencyType const type, C_Decimal const & value) : m_Type(type), m_Value(value) {}
+	C_CurrencyValue() {}
+	C_CurrencyValue(T_CurrencyType const type) : m_Type(type) {}
+	C_CurrencyValue(T_CurrencyType const type, T_Value const value) : m_Type(type), m_Value(value) {}
+	C_CurrencyValue(T_CurrencyType const type, T_Value const value, T_E const e) : m_Type(type), m_Value(value, e) {}
+	C_CurrencyValue(T_CurrencyType const type, C_Decimal const & value) : m_Type(type), m_Value(value) {}
 
 	C_CurrencyValue operator -(C_CurrencyValue const & other) const;
 	C_CurrencyValue operator -=(C_CurrencyValue const & other);
@@ -36,7 +36,7 @@ public:
 	bool operator ==(C_CurrencyValue const & other) const;
 	bool operator <=(C_CurrencyValue const & other) const;
 
-	E_CurrencyType	GetType() const { return m_Type; }
+	T_CurrencyType	GetType() const { return m_Type; }
 	C_Decimal const & GetValue() const { return m_Value; }
 	
 	bool IsZero() const { return m_Value.IsZero(); }
@@ -46,7 +46,7 @@ public:
 	void PrintData(std::ostringstream & str) const;
 
 private:
-	E_CurrencyType	m_Type;
+	T_CurrencyType	m_Type;
 	C_Decimal		m_Value;
 };
 

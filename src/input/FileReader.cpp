@@ -621,7 +621,7 @@ T_CurrencyValueConstPtr	C_FileReader::ReadCurrencyValue(std::stringstream & stre
 		std::string valueStr;
 		int64_t value (0);
 		int8_t valueDecimalShift (0);
-		E_CurrencyType currencyType (E_CurrencyType::Count);
+		T_CurrencyType currencyType;
 		std::size_t const spacePos = currencyValueStr.find(' ');
 		if (spacePos != std::string::npos)
 		{
@@ -667,23 +667,14 @@ T_CurrencyValueConstPtr	C_FileReader::ReadCurrencyValue(std::stringstream & stre
 
 			if (!error)
 			{
-				std::string const currencyTypeStr = currencyValueStr.substr(spacePos + 1, currencyValueStr.length());
-				if (currencyTypeStr.compare("EUR") == 0)
+				currencyType = currencyValueStr.substr(spacePos + 1, currencyValueStr.length());
+				if (currencyType.length() > 0)
 				{
-					currencyType = E_CurrencyType::EUR;
-				}
-				else if (currencyTypeStr.compare("BTC") == 0)
-				{
-					currencyType = E_CurrencyType::BTC;
+					retVal = std::make_unique<C_CurrencyValue>(currencyType, value, valueDecimalShift); 
 				}
 				else
 				{
 					error = true;
-				}
-
-				if (!error)
-				{
-					retVal = std::make_unique<C_CurrencyValue>(currencyType, value, valueDecimalShift);
 				}
 			}
 		}

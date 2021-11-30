@@ -6,6 +6,7 @@
 
 #include "TradeBook.h"
 #include "TradeItem.h"
+#include "TradeItemMarket.h"
 
 C_TradeBook::C_TradeBook()
 {
@@ -24,6 +25,23 @@ void C_TradeBook::AddItem(std::unique_ptr<C_TradeItem> && item)
 void C_TradeBook::SetTradeItems(T_TradeItems && items)
 {
 	m_TradeItems = std::move(items);
+}
+
+T_CurrencyType C_TradeBook::AssessUserCurrency() const
+{
+	T_CurrencyType userCurrency;
+
+	for (T_TradeItemUniquePtr const & item : m_TradeItems)
+	{
+		C_TradeItemMarket const * const itemMarket (dynamic_cast<C_TradeItemMarket const *>(item.get()));
+		if (itemMarket != nullptr)
+		{
+			userCurrency = itemMarket->GetValue().GetType();
+			break;
+		}
+	}
+
+	return userCurrency;
 }
 
 void C_TradeBook::PrintData(std::ostringstream & str)

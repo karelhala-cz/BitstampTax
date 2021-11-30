@@ -13,7 +13,7 @@ class C_Tax
 public:
 	typedef int T_Year;
 
-	C_Tax(T_Year const year);
+	C_Tax(T_Year const year, T_CurrencyType const & currencyType);
 
 	void AddExpenditure(C_CurrencyValue const & value);
 	void AddReceipt(C_CurrencyValue const & value);

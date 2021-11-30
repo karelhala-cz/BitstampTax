@@ -110,7 +110,8 @@ void C_MainFrame::OnOpenFile(wxCommandEvent & event)
 
 				if ((m_TradeBook != nullptr) && !m_TradeBook->IsEmpty())
 				{
-					m_TaxFifo = std::make_unique<C_TaxFifo>();
+					T_CurrencyType const taxCurrency(m_TradeBook->AssessUserCurrency());
+					m_TaxFifo = std::make_unique<C_TaxFifo>(taxCurrency);
 					if (!m_TaxFifo->Process(*m_TradeBook))
 					{
 						wxLogError("Tax computation failed, probably incomplete data has been passed.");

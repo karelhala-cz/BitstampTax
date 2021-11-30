@@ -19,7 +19,7 @@ class C_TaxFifo
 	typedef std::vector<C_TradeItemMarket const *> T_TradeItems;
 
 public: 
-	C_TaxFifo();
+	C_TaxFifo(T_CurrencyType const & taxCurrency);
 
 	bool Process(C_TradeBook const & book);
 
@@ -45,9 +45,13 @@ private:
 	bool FindPairs(T_TradeItems const & buys, T_TradeItems const & sells);
 	void AddPair(C_CurrencyValue const & amount, C_TradeItemMarket const & buyItem, C_TradeItemMarket const & sellItem);
 
+	size_t GetFirstItemIndexForType(T_CurrencyType const & type, std::time_t const maxTime, T_TradeItems const & items) const;
+	size_t GetNextItemIndexForType(T_CurrencyType const & type, std::time_t const maxTime, size_t const index, T_TradeItems const & items) const;
+
 	void ProcessPairs();
 
 private:
+	T_CurrencyType m_TaxCurrency;
 	std::vector<C_TradePair> m_Pairs;
 	std::vector<C_Tax> m_Tax;
 	std::string m_ErrorMsg;

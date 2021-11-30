@@ -6,9 +6,12 @@
 
 #include "TaxFifo.h"
 #include "trade_book/TradeItemMarket.h"
+#include <map>
+#include <iostream>
 #include <cassert>
 
-C_TaxFifo::C_TaxFifo()
+C_TaxFifo::C_TaxFifo(T_CurrencyType const & taxCurrency)
+	: m_TaxCurrency(taxCurrency)
 {
 }
 
@@ -82,7 +85,7 @@ C_Tax & C_TaxFifo::GetTaxYear(C_Tax::T_Year const year)
 		}
 	}
 
-	m_Tax.emplace_back(year);
+	m_Tax.emplace_back(year, m_TaxCurrency);
 
 	return m_Tax.back();
 }
@@ -93,65 +96,91 @@ bool C_TaxFifo::FindPairs(T_TradeItems const & buys, T_TradeItems const & sells)
 
 	if (!buys.empty() && !sells.empty())
 	{
-		T_TradeItems::const_iterator buyIt(buys.begin());
-		C_CurrencyValue boughtAmountToProcess((*buyIt)->GetAmount());
+		struct S_BuyItem
+		{
+			S_BuyItem(size_t const index, C_CurrencyValue const & amount)
+				: m_Index(index)
+				, m_BoughtAmountToProcess(amount)
+			{
+			}
+
+			size_t			m_Index;
+			C_CurrencyValue m_BoughtAmountToProcess;
+		};
+
+		typedef std::map<T_CurrencyType, S_BuyItem> T_BuyItemPerType;
+		T_BuyItemPerType buyItemPerType;
+
 		for (C_TradeItemMarket const * const sell : sells)
 		{
 			C_CurrencyValue sellAmountToProcess(sell->GetAmount());
 
+			T_BuyItemPerType::iterator itBuyItemPerType = buyItemPerType.find(sellAmountToProcess.GetType());
+			if (itBuyItemPerType == buyItemPerType.end())
+			{
+				size_t const buyItemIndex(GetFirstItemIndexForType(sellAmountToProcess.GetType(), sell->GetTime(), buys));
+				if ((buyItemIndex < buys.size()))
+				{
+					C_CurrencyValue const & buyAmount(buys.at(buyItemIndex)->GetAmount());
+					std::pair<T_BuyItemPerType::iterator, bool> ret(buyItemPerType.insert(std::pair<T_CurrencyType, S_BuyItem>(buyAmount.GetType(), S_BuyItem(buyItemIndex, buyAmount))));
+					assert(ret.second == true);	//item inserted
+					itBuyItemPerType = ret.first;
+				}
+			}
+			
+			if (itBuyItemPerType == buyItemPerType.end())
+			{
+				error = true;
+				m_ErrorMsg += "Corresponding buy item not found! Incomplete data!\n";
+				break;
+			}
+
+			S_BuyItem & buyItemCache(itBuyItemPerType->second);
+
 			do 
 			{
-				if (sell->GetTime() >= (*buyIt)->GetTime())
+				if (sellAmountToProcess < buyItemCache.m_BoughtAmountToProcess)
 				{
-					if (sellAmountToProcess < boughtAmountToProcess)
-					{
-						AddPair(sellAmountToProcess, *(*buyIt), *sell);
-						boughtAmountToProcess -= sellAmountToProcess;
-						sellAmountToProcess.Zero();
-					}
-					else if (sellAmountToProcess > boughtAmountToProcess)
-					{
-						AddPair(boughtAmountToProcess, *(*buyIt), *sell);
-						sellAmountToProcess -= boughtAmountToProcess;
-						boughtAmountToProcess.Zero();
-					}
-					else
-					{
-						AddPair(sellAmountToProcess, *(*buyIt), *sell);
-						boughtAmountToProcess.Zero();
-						sellAmountToProcess.Zero();
-					}
-
-					if (boughtAmountToProcess.IsZero())
-					{
-						buyIt++;
-						if (buyIt != buys.end())
-						{
-							boughtAmountToProcess = (*buyIt)->GetAmount();
-						}
-						else
-						{
-							if (!sellAmountToProcess.IsZero())
-							{
-								error = true;
-								m_ErrorMsg += "Buy item not found!\n";
-							}
-						}
-					}
-
-					if (sellAmountToProcess.IsZero())
-					{
-						break;
-					}
+					AddPair(sellAmountToProcess, *buys[buyItemCache.m_Index], *sell);
+					buyItemCache.m_BoughtAmountToProcess -= sellAmountToProcess;
+					sellAmountToProcess.Zero();
+				}
+				else if (sellAmountToProcess > buyItemCache.m_BoughtAmountToProcess)
+				{
+					AddPair(buyItemCache.m_BoughtAmountToProcess, *buys[buyItemCache.m_Index], *sell);
+					sellAmountToProcess -= buyItemCache.m_BoughtAmountToProcess;
+					buyItemCache.m_BoughtAmountToProcess.Zero();
 				}
 				else
 				{
-					error = true;
-					m_ErrorMsg += "Buy/Sell time mismatch!\n";
-					break;
+					AddPair(sellAmountToProcess, *buys[buyItemCache.m_Index], *sell);
+					buyItemCache.m_BoughtAmountToProcess.Zero();
+					sellAmountToProcess.Zero();
 				}
 
-			} while (buyIt < buys.end());
+				if (buyItemCache.m_BoughtAmountToProcess.IsZero())
+				{
+					size_t const nextBuyIndex(GetNextItemIndexForType(sellAmountToProcess.GetType(), sell->GetTime(), buyItemCache.m_Index, buys));
+					if (nextBuyIndex < buys.size())
+					{
+						buyItemCache.m_Index = nextBuyIndex;
+						buyItemCache.m_BoughtAmountToProcess = buys[nextBuyIndex]->GetAmount();
+					}
+					else
+					{
+						//if (!sellAmountToProcess.IsZero())
+						{
+							error = true;
+							m_ErrorMsg += "Buy item not found!\n";
+						}
+					}
+				}
+
+				if (sellAmountToProcess.IsZero())
+				{
+					break;
+				}
+			} while (buyItemCache.m_Index < buys.size());
 
 			if (error)
 			{
@@ -161,6 +190,50 @@ bool C_TaxFifo::FindPairs(T_TradeItems const & buys, T_TradeItems const & sells)
 	}
 
 	return !error;
+}
+
+size_t C_TaxFifo::GetFirstItemIndexForType(T_CurrencyType const & type, std::time_t const maxTime, T_TradeItems const & items) const
+{
+	size_t retIndex(0);
+	
+	for (; retIndex < items.size(); ++retIndex)
+	{
+		C_TradeItemMarket const * const item(items.at(retIndex));
+		if (item->GetTime() > maxTime)
+		{
+			retIndex = items.size();
+			break;
+		}
+
+		if (type == item->GetAmount().GetType())
+		{
+			break;
+		}
+	}
+
+	return retIndex;
+}
+
+size_t C_TaxFifo::GetNextItemIndexForType(T_CurrencyType const & type, std::time_t const maxTime, size_t const index, T_TradeItems const & items) const
+{
+	size_t retIndex(index + 1);
+	
+	for (; retIndex < items.size(); ++retIndex)
+	{
+		C_TradeItemMarket const * const item(items.at(retIndex));
+		if (item->GetTime() > maxTime)
+		{
+			retIndex = items.size();
+			break;
+		}
+
+		if (type == items.at(retIndex)->GetAmount().GetType())
+		{
+			break;
+		}
+	}
+
+	return retIndex;
 }
 
 void C_TaxFifo::AddPair(C_CurrencyValue const & amount, C_TradeItemMarket const & buyItem, C_TradeItemMarket const & sellItem)

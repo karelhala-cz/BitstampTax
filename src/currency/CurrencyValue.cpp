@@ -80,5 +80,5 @@ void C_CurrencyValue::PrintData(std::ostringstream & str) const
 	
 	str << " ";
 
-	str << std::string(CurrencyTypeToStr(m_Type));
+	str << m_Type;
 }

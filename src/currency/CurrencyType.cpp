@@ -5,27 +5,3 @@
 //*********************************************************************************************************************
 
 #include "CurrencyType.h"
-
-char const * CurrencyTypeToStr(E_CurrencyType const type)
-{
-	switch (type)
-	{
-		case E_CurrencyType::EUR:
-		{
-			return "EUR";
-		}
-		break;
-
-		case E_CurrencyType::BTC:
-		{
-			return "BTC";
-		}
-		break;
-
-		case E_CurrencyType::Count:
-		default:
-			break;
-	}
-
-	return "Invalid";
-}

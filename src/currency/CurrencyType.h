@@ -5,15 +5,7 @@
 //*********************************************************************************************************************
 
 #pragma once
-#include <stdint.h>
+#include <string>
 
-enum class E_CurrencyType : int8_t
-{
-	EUR,
-	BTC,
+typedef std::string T_CurrencyType;
 
-	Count
-};
-
-
-char const * CurrencyTypeToStr(E_CurrencyType const type);
