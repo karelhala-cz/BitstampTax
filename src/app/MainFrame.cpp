@@ -114,16 +114,30 @@ void C_MainFrame::OnOpenFile(wxCommandEvent & event)
 					m_TaxFifo = std::make_unique<C_TaxFifo>(taxCurrency);
 					if (!m_TaxFifo->Process(*m_TradeBook))
 					{
-						wxLogError("Tax computation failed, probably incomplete data has been passed.");
+						std::string errorMsg;
+						if (!m_TaxFifo->GetErrorMsg().empty())
+						{
+							errorMsg = " Error: ";
+							errorMsg += m_TaxFifo->GetErrorMsg();
+						}
+						wxLogError("Tax computation failed, probably incomplete data has been passed.%s", errorMsg);
+						m_TaxFifo = nullptr;
 					}
 				}
-
-				OnDataChanged();
             }
             else
             {
-                wxLogError("Cannot open file '%s'.", openFileDialog.GetPath());
+				std::string errorMsg;
+				if (!m_FileReader->GetErrorMsg().empty())
+				{
+					errorMsg = " Error: ";
+					errorMsg += m_FileReader->GetErrorMsg();
+				}
+                wxLogError("Cannot read file '%s'.%s", openFileDialog.GetPath(), errorMsg);
+				m_FileReader = nullptr;
             }
+
+			OnDataChanged();
         }
         break;
 

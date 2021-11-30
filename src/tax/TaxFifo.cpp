@@ -131,7 +131,7 @@ bool C_TaxFifo::FindPairs(T_TradeItems const & buys, T_TradeItems const & sells)
 			if (itBuyItemPerType == buyItemPerType.end())
 			{
 				error = true;
-				m_ErrorMsg += "Corresponding buy item not found! Incomplete data!\n";
+				m_ErrorMsg += "Can not assess buy-sell pairs!\n";
 				break;
 			}
 
@@ -168,19 +168,14 @@ bool C_TaxFifo::FindPairs(T_TradeItems const & buys, T_TradeItems const & sells)
 					}
 					else
 					{
-						//if (!sellAmountToProcess.IsZero())
+						if (!sellAmountToProcess.IsZero())
 						{
 							error = true;
-							m_ErrorMsg += "Buy item not found!\n";
+							m_ErrorMsg += "Can not assess buy-sell pairs!\n";
 						}
 					}
 				}
-
-				if (sellAmountToProcess.IsZero())
-				{
-					break;
-				}
-			} while (buyItemCache.m_Index < buys.size());
+			} while (!sellAmountToProcess.IsZero() && (buyItemCache.m_Index < buys.size()) && !error);
 
 			if (error)
 			{

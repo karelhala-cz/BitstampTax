@@ -134,11 +134,19 @@ void C_Decimal::PrintData(std::ostringstream & str) const
 	}
 	else if (m_E < 0)
 	{
+		//deal with a sign first
+		int64_t value(m_Value);
+		if (value < 0)
+		{
+			str << "-";
+			value = -value;
+		}
+
 		int8_t ePositive (-m_E);
-		int64_t const integralPart (m_Value / ipow(10, ePositive));
+		int64_t const integralPart (value / ipow(10, ePositive));
 		str << integralPart;
 		str << ".";
-		int64_t const fractionalPart (m_Value - (integralPart * ipow(10, ePositive)));
+		int64_t const fractionalPart (value - (integralPart * ipow(10, ePositive)));
 		ePositive--;
 		for (; ePositive > 0; ePositive--)
 		{
