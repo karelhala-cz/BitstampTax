@@ -39,14 +39,21 @@ C_MainFrame::C_MainFrame()
     
     //First row
 	wxBoxSizer * fileSizer = new wxBoxSizer(wxVERTICAL);
-	fileSizer->Add(new wxStaticText(this, wxID_ANY, wxT("File:")), 0, wxALIGN_LEFT);
+	wxStaticText * const captionFile (new wxStaticText(this, wxID_ANY, wxT("File data:")));
+	wxFont captionFont (captionFile->GetFont());
+//	captionFont.SetPointSize(10);
+	captionFont.SetWeight(wxFONTWEIGHT_BOLD);
+	captionFile->SetFont(captionFont);
+	fileSizer->Add(captionFile, 0, wxALIGN_LEFT);
     m_ListBoxFile = new wxListBox(this, ID_ListBoxFile);
     fileSizer->Add(m_ListBoxFile, 1, wxEXPAND | wxALL);
 	topSizer->Add(fileSizer, 1, wxEXPAND | wxALL);
 
 	//Second row
 	wxBoxSizer * pairsGridSizer = new wxBoxSizer(wxVERTICAL);
-	pairsGridSizer->Add(new wxStaticText(this, wxID_ANY, wxT("Trade pairs:")), 0, wxALIGN_LEFT);
+	wxStaticText * const captionPairs (new wxStaticText(this, wxID_ANY, wxT("Trade pairs:")));
+	captionPairs->SetFont(captionFont);
+	pairsGridSizer->Add(captionPairs, 0, wxALIGN_LEFT);
 	m_GridPairs = new wxGrid(this, ID_PairsGrid, wxPoint(0, 0), FromDIP(wxSize(800, 70)));	//The size definition fixes a weird row overflow out of sizer border
 	m_GridPairs->EnableEditing(false);
 	m_GridPairs->SetDefaultCellAlignment(wxALIGN_RIGHT, wxALIGN_TOP);
@@ -63,7 +70,9 @@ C_MainFrame::C_MainFrame()
 
     //Third row
 	wxBoxSizer * taxesGridSizer = new wxBoxSizer(wxVERTICAL);
-	taxesGridSizer->Add(new wxStaticText(this, wxID_ANY, wxT("Tax:")), 0, wxALIGN_LEFT);
+	wxStaticText * const captionTax (new wxStaticText(this, wxID_ANY, wxT("Tax:")));
+	captionTax->SetFont(captionFont);
+	taxesGridSizer->Add(captionTax, 0, wxALIGN_LEFT);
     m_GridTaxes = new wxGrid(this, ID_PairsGrid, wxPoint(0, 0), FromDIP(wxSize(800, 70)));
 	m_GridTaxes->EnableEditing(false);
 	m_GridTaxes->SetDefaultCellAlignment(wxALIGN_RIGHT, wxALIGN_TOP);
