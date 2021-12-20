@@ -27,6 +27,7 @@ private:
 	
 	void UpdateListBoxFile();
 	void UpdateGridPairs();
+	void UpdateGridFees();
 	void UpdateGridTaxes();
 
 	wxString GetDateTimeString(time_t const t);
@@ -34,6 +35,7 @@ private:
 private:
     wxListBox *		m_ListBoxFile;
     wxGrid *		m_GridPairs;
+	wxGrid *		m_GridFees;
     wxGrid *		m_GridTaxes;
 
 	std::unique_ptr<C_FileReader>	m_FileReader;

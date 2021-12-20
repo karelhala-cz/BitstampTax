@@ -19,6 +19,9 @@
 C_MainFrame::C_MainFrame()
     : wxFrame(NULL, wxID_ANY, "Bitstamp Tax", wxDefaultPosition, wxSize(1024, 768))
 	, m_ListBoxFile(nullptr)
+	, m_GridPairs(nullptr)
+	, m_GridFees(nullptr)
+    , m_GridTaxes(nullptr)
 {
     wxMenu *menuFile = new wxMenu;
     menuFile->Append(ID_FileOpen, "&Open...\tCtrl-O", "Open File...");
@@ -37,7 +40,7 @@ C_MainFrame::C_MainFrame()
 
     wxBoxSizer * topSizer = new wxBoxSizer(wxVERTICAL);
     
-    //First row
+    //First row - Input data
 	wxBoxSizer * fileSizer = new wxBoxSizer(wxVERTICAL);
 	wxStaticText * const captionFile (new wxStaticText(this, wxID_ANY, wxT("File data:")));
 	wxFont captionFont (captionFile->GetFont());
@@ -49,7 +52,7 @@ C_MainFrame::C_MainFrame()
     fileSizer->Add(m_ListBoxFile, 1, wxEXPAND | wxALL);
 	topSizer->Add(fileSizer, 1, wxEXPAND | wxALL);
 
-	//Second row
+	//Second row - Buy-sell pairs
 	wxBoxSizer * pairsGridSizer = new wxBoxSizer(wxVERTICAL);
 	wxStaticText * const captionPairs (new wxStaticText(this, wxID_ANY, wxT("Trade pairs:")));
 	captionPairs->SetFont(captionFont);
@@ -68,7 +71,21 @@ C_MainFrame::C_MainFrame()
 	pairsGridSizer->Add(m_GridPairs, 1, wxEXPAND | wxALL);
 	topSizer->Add(pairsGridSizer, 1, wxEXPAND | wxALL);
 
-    //Third row
+    //Third row - Fee
+	wxBoxSizer * feesGridSizer = new wxBoxSizer(wxVERTICAL);
+	wxStaticText * const captionFees (new wxStaticText(this, wxID_ANY, wxT("Fees:")));
+	captionFees->SetFont(captionFont);
+	feesGridSizer->Add(captionFees, 0, wxALIGN_LEFT);
+    m_GridFees = new wxGrid(this, ID_PairsGrid, wxPoint(0, 0), FromDIP(wxSize(800, 70)));
+	m_GridFees->EnableEditing(false);
+	m_GridFees->SetDefaultCellAlignment(wxALIGN_RIGHT, wxALIGN_TOP);
+	m_GridFees->CreateGrid(0, 2);
+	m_GridFees->SetColLabelValue(0, "Datetime");
+	m_GridFees->SetColLabelValue(1, "Fee");
+	feesGridSizer->Add(m_GridFees, 1, wxEXPAND | wxALL);
+	topSizer->Add(feesGridSizer, 1, wxEXPAND | wxALL);
+
+	//Fourth row - Tax
 	wxBoxSizer * taxesGridSizer = new wxBoxSizer(wxVERTICAL);
 	wxStaticText * const captionTax (new wxStaticText(this, wxID_ANY, wxT("Tax:")));
 	captionTax->SetFont(captionFont);
@@ -175,6 +192,7 @@ void C_MainFrame::OnDataChanged()
 {
 	UpdateListBoxFile();
 	UpdateGridPairs();
+	UpdateGridFees();
 	UpdateGridTaxes();
 }
 
@@ -227,6 +245,45 @@ void C_MainFrame::UpdateGridPairs()
 		});
 
 		m_GridPairs->AutoSizeColumns();
+	}
+}
+
+void C_MainFrame::UpdateGridFees()
+{
+	assert(m_GridFees != nullptr);
+	
+	m_GridFees->ClearGrid();
+
+	if (m_GridFees->GetNumberRows() > 0)
+	{
+		m_GridFees->DeleteRows(0, m_GridFees->GetNumberRows());
+	}
+
+	if (m_TradeBook != nullptr)
+	{
+		m_GridFees->AppendRows(m_TradeBook->GetData().size());
+		int rowCounter(0);
+
+		for (T_TradeItemUniquePtr const & item : m_TradeBook->GetData())
+		{
+			C_TradeItemMarket const * const itemMarket (dynamic_cast<C_TradeItemMarket const *>(item.get()));
+			if (itemMarket != nullptr)
+			{
+				C_CurrencyValue fee;
+				if (itemMarket->IsFeeValid())
+				{
+					m_GridFees->SetCellValue(rowCounter, 0, GetDateTimeString(itemMarket->GetTime()));
+					m_GridFees->SetCellValue(rowCounter, 1, itemMarket->GetFee().GetAsString());
+
+					rowCounter++;
+				}
+			}
+		}
+
+		if (rowCounter < m_GridFees->GetNumberRows())
+		{
+			m_GridFees->DeleteRows(rowCounter, m_GridFees->GetNumberRows() - rowCounter);
+		}
 	}
 }
 
