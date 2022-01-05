@@ -22,16 +22,20 @@ private:
     void OnOpenFile(wxCommandEvent& event);
     void OnExit(wxCommandEvent & event);
     void OnAbout(wxCommandEvent & event);
+	void OnListBoxFile(wxCommandEvent & event);
 
 	void OnDataChanged();
+	void OnSelectedFileLine(size_t const inputFileLine);
 	
 	void UpdateListBoxFile();
 	void UpdateGridPairs();
 	void UpdateGridFees();
 	void UpdateGridTaxes();
 
-	wxString GetDateTimeString(time_t const t);
+	void UpdateGridPairsSelection(size_t const selectedFileLine);
+	void UpdateGridFeesSelection(size_t const selectedFileLine);
 
+	wxString GetDateTimeString(time_t const t);
 private:
     wxListBox *		m_ListBoxFile;
     wxGrid *		m_GridPairs;

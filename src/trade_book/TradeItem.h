@@ -16,6 +16,7 @@ public:
 
 	virtual ~C_TradeItem() {}
 
+	size_t					GetInputFileLine() const { return m_InputFileLine; }
 	std::time_t				GetTime() const { return m_Time; }
 	C_CurrencyValue	const & GetAmount() const { return *m_Amount; } 
 

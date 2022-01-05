@@ -233,7 +233,13 @@ size_t C_TaxFifo::GetNextItemIndexForType(T_CurrencyType const & type, std::time
 
 void C_TaxFifo::AddPair(C_CurrencyValue const & amount, C_TradeItemMarket const & buyItem, C_TradeItemMarket const & sellItem)
 {
-	m_Pairs.emplace_back(amount, buyItem.GetRate(), buyItem.GetTime(), sellItem.GetRate(), sellItem.GetTime());
+	m_Pairs.emplace_back(amount,
+		buyItem.GetInputFileLine(),
+		buyItem.GetRate(),
+		buyItem.GetTime(),
+		sellItem.GetInputFileLine(),
+		sellItem.GetRate(),
+		sellItem.GetTime());
 }
 
 void C_TaxFifo::ProcessPairs()

@@ -108,6 +108,7 @@ C_MainFrame::C_MainFrame()
     Bind(wxEVT_MENU, &C_MainFrame::OnOpenFile, this, ID_FileOpen);
     Bind(wxEVT_MENU, &C_MainFrame::OnAbout, this, wxID_ABOUT);
     Bind(wxEVT_MENU, &C_MainFrame::OnExit, this, wxID_EXIT);
+	Bind(wxEVT_LISTBOX,  &C_MainFrame::OnListBoxFile, this, ID_ListBoxFile);
 }
 
 void C_MainFrame::OnOpenFile(wxCommandEvent & event)
@@ -186,6 +187,13 @@ void C_MainFrame::OnAbout(wxCommandEvent & event)
 {
     wxMessageBox("This is a simple tool to deal with a tax computation after a crypto trading fun. Use it at you own risk.",
                  "About BitstampTax", wxOK | wxICON_INFORMATION);
+}
+
+void C_MainFrame::OnListBoxFile(wxCommandEvent & event)
+{
+	int const selectedLineNumber (event.GetInt());
+	assert (selectedLineNumber >= 0);
+	OnSelectedFileLine(static_cast<size_t>(selectedLineNumber));
 }
 
 void C_MainFrame::OnDataChanged()
@@ -284,6 +292,8 @@ void C_MainFrame::UpdateGridFees()
 		{
 			m_GridFees->DeleteRows(rowCounter, m_GridFees->GetNumberRows() - rowCounter);
 		}
+
+		m_GridFees->AutoSizeColumns();
 	}
 }
 
@@ -328,4 +338,106 @@ wxString C_MainFrame::GetDateTimeString(time_t const t)
 	}
 
 	return wxString(strTime);
+}
+
+void C_MainFrame::OnSelectedFileLine(size_t const inputFileLine)
+{
+	UpdateGridPairsSelection(inputFileLine);
+	UpdateGridFeesSelection(inputFileLine);
+}
+
+void C_MainFrame::UpdateGridPairsSelection(size_t const selectedFileLine)
+{
+	m_GridPairs->ClearSelection();
+
+	enum class E_SellectedLineType { UNDEFINED, BUY, SELL};
+	E_SellectedLineType selectedLineType(E_SellectedLineType::UNDEFINED);
+	size_t firstRowIndex(m_TaxFifo->GetPairsCount());
+	size_t lastRowIndex(m_TaxFifo->GetPairsCount());
+
+	if (m_TaxFifo != nullptr)
+	{
+		for (size_t i = 0; i < m_TaxFifo->GetPairsCount(); ++i)
+		{
+			C_TradePair const & tradePair(m_TaxFifo->GetTradePair(i));
+			if ((tradePair.GetBuyInputFileLine() == selectedFileLine) || (tradePair.GetSellInputFileLine() == selectedFileLine))
+			{
+				if (selectedLineType == E_SellectedLineType::UNDEFINED)
+				{
+					selectedLineType = (tradePair.GetBuyInputFileLine() == selectedFileLine) ? E_SellectedLineType::BUY : E_SellectedLineType::SELL;
+					firstRowIndex = i;
+					lastRowIndex = i;
+				}
+				else
+				{
+					assert(((tradePair.GetBuyInputFileLine() == selectedFileLine) && (selectedLineType == E_SellectedLineType::BUY))||
+						((tradePair.GetSellInputFileLine() == selectedFileLine) && (selectedLineType == E_SellectedLineType::SELL)));
+					assert(lastRowIndex <= i);
+					lastRowIndex = i;
+				}
+			}
+			else
+			{
+				if (selectedLineType != E_SellectedLineType::UNDEFINED)
+				{
+					break;
+				}
+			}
+		}
+	}
+
+	if (selectedLineType != E_SellectedLineType::UNDEFINED)
+	{
+		static int const FIRST_COLL_SELL_SELECTION(0);
+		static int const FIRST_COLL_BUY_SELECTION(2);
+		static int const COLL_SELECTION_COUNT(2);
+		int const firstCollIndex((selectedLineType == E_SellectedLineType::SELL) ? FIRST_COLL_SELL_SELECTION : FIRST_COLL_BUY_SELECTION);
+		int const lastCollIndex(firstCollIndex + COLL_SELECTION_COUNT);
+		wxGridCellCoords const topLeft(firstRowIndex, firstCollIndex);
+		wxGridCellCoords const bottomRight(lastRowIndex, lastCollIndex);
+		m_GridPairs->SelectBlock(topLeft, bottomRight);
+		m_GridPairs->MakeCellVisible(topLeft);
+		m_GridPairs->MakeCellVisible(bottomRight);
+	}
+}
+
+void C_MainFrame::UpdateGridFeesSelection(size_t const selectedFileLine)
+{
+	m_GridFees->ClearSelection();
+
+	if (m_TradeBook != nullptr)
+	{
+		int rowIndex(m_GridFees->GetNumberRows());
+
+		size_t gridFeeRowIndex(0);
+		for (T_TradeItemUniquePtr const & item : m_TradeBook->GetData())
+		{
+			C_TradeItemMarket const * const itemMarket (dynamic_cast<C_TradeItemMarket const *>(item.get()));
+			if (itemMarket != nullptr)
+			{
+				if (itemMarket->IsFeeValid())
+				{
+					if (itemMarket->GetInputFileLine() == selectedFileLine)
+					{
+						if (rowIndex == m_GridFees->GetNumberRows())
+						{
+							rowIndex = gridFeeRowIndex;
+							break;
+						}
+
+					}
+					gridFeeRowIndex++;
+				}
+			}
+		}
+
+		if (rowIndex != m_GridFees->GetNumberRows())
+		{
+			wxGridCellCoords const topLeft(rowIndex, 0);
+			wxGridCellCoords const bottomRight(rowIndex, 1);
+			m_GridFees->SelectBlock(topLeft, bottomRight);
+			m_GridFees->MakeCellVisible(topLeft);
+			m_GridFees->MakeCellVisible(bottomRight);
+		}
+	}
 }
