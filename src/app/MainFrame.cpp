@@ -5,6 +5,7 @@
 
 #include "MainFrame.h"
 #include "Ids.h"
+#include "AboutDialog.h"
 #include <trade_book/TradeBook.h>
 #include <trade_book/TradeItemMarket.h>
 #include <tax/TaxFifo.h>
@@ -23,13 +24,12 @@ C_MainFrame::C_MainFrame()
 	, m_GridFees(nullptr)
     , m_GridTaxes(nullptr)
 {
-    wxMenu *menuFile = new wxMenu;
+	wxMenu * const menuFile = new wxMenu;
     menuFile->Append(ID_FileOpen, "&Open...\tCtrl-O", "Open File...");
     menuFile->Append(wxID_EXIT);
     
-    wxMenu *menuHelp = new wxMenu;
+    wxMenu * const menuHelp = new wxMenu;
     menuHelp->Append(wxID_ABOUT);
-
     wxMenuBar *menuBar = new wxMenuBar;
     menuBar->Append(menuFile, "&File");
     menuBar->Append(menuHelp, "&Help");
@@ -106,8 +106,8 @@ C_MainFrame::C_MainFrame()
 	this->SetSizer(topSizer);
 
     Bind(wxEVT_MENU, &C_MainFrame::OnOpenFile, this, ID_FileOpen);
-    Bind(wxEVT_MENU, &C_MainFrame::OnAbout, this, wxID_ABOUT);
     Bind(wxEVT_MENU, &C_MainFrame::OnExit, this, wxID_EXIT);
+	Bind(wxEVT_MENU, &C_MainFrame::OnAbout, this, wxID_ABOUT);
 	Bind(wxEVT_LISTBOX,  &C_MainFrame::OnListBoxFile, this, ID_ListBoxFile);
 }
 
@@ -185,8 +185,11 @@ void C_MainFrame::OnExit(wxCommandEvent & event)
 
 void C_MainFrame::OnAbout(wxCommandEvent & event)
 {
-    wxMessageBox("This is a simple tool to deal with a tax computation after a crypto trading fun. Use it at you own risk.",
-                 "About BitstampTax", wxOK | wxICON_INFORMATION);
+	C_AboutDialog aboutDialog;
+	if (aboutDialog.ShowModal() == wxID_OK)
+	{
+
+	}
 }
 
 void C_MainFrame::OnListBoxFile(wxCommandEvent & event)

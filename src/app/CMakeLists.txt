@@ -16,6 +16,9 @@ set(SRC_FILES
 	MainFrame.cpp
 	InputParams.h
 	InputParams.cpp
+	AboutDialog.h
+	AboutDialog.cpp
+	Version.h
     )
 	
 # should be placed before "add_executable"
