@@ -1,5 +1,9 @@
 # BitstampTax
 
+	The application computes annual profit/loss based on Bitstamp's transaction
+history. The FIFO method is used.
+
+
 Build steps:
 	- Windows
 		build wxWidgets somewhere (e.g. d:/sdks/wxWidgets_315)
