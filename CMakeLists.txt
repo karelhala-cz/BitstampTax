@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.0)
  
-set(CMAKE_GENERATOR_PLATFORM win32)
+set(CMAKE_GENERATOR_PLATFORM x64)
  
 # Maps to Visual Studio solution file (BitstampTax.sln)
 # The solution will have all targets (exe, lib, dll) 

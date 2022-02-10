@@ -22,7 +22,8 @@ set(SRC_FILES
     )
 	
 # should be placed before "add_executable"
-link_directories ("$ENV{WXWIN}/lib/vc_lib")
+#link_directories ("$ENV{WXWIN}/lib/vc_lib")
+link_directories ("$ENV{WXWIN}/lib/vc_x64_lib")
 	
 # Set Properties->General->Configuration Type to Application(.exe)
 # Creates BitstampTax.exe with the listed sources (main.cpp)
