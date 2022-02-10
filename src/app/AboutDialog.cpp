@@ -1,6 +1,7 @@
 //*********************************************************************************************************************
 // Author:	  Karel Hala, hala.karel@gmail.com
-// Copyright: (c) 2021 Karel Hala
+// Copyright: (c) 2021-2022 Karel Hala
+// License:	  MIT
 //*********************************************************************************************************************
 
 #include "AboutDialog.h"
@@ -21,15 +22,15 @@ C_AboutDialog::C_AboutDialog()
 	topSizer->Add(programVersion, PROPORTION, wxEXPAND | wxALL, BORDER);
 
 	wxString const strAbout(wxT("   The application computes annual profit/loss based on Bitstamp's transaction history. The FIFO method is used. Keep in mind that complete data are needed for proper results."));
-	wxStaticText * const aboutProgram (new wxStaticText(this, wxID_ANY, strAbout, wxDefaultPosition, wxSize(TEXT_WIDTH, 72)));
+	wxStaticText * const aboutProgram (new wxStaticText(this, wxID_ANY, strAbout, wxDefaultPosition, wxSize(TEXT_WIDTH, 80)));
 	topSizer->Add(aboutProgram, PROPORTION, wxEXPAND | wxALL, BORDER);
 
 	wxString const strAuthor(wxT("Author:\n   Karel Hála, hala.karel@gmail.com"));
 	wxStaticText * const aboutAuthor (new wxStaticText(this, wxID_ANY, strAuthor));
 	topSizer->Add(aboutAuthor, PROPORTION, wxEXPAND | wxALL, BORDER);
 
-	wxString const strLicense(wxT("License Agreement:\n   It's freeware. You can use it for commercial and non-commercial purposes. You can also make copies and distribute the software, but you may not modify it or distribute it for a fee."));
-	wxStaticText * const license (new wxStaticText(this, wxID_ANY, strLicense, wxDefaultPosition, wxSize(TEXT_WIDTH, 128)));
+	wxString const strLicense(wxT("License:\n   MIT"));
+	wxStaticText * const license (new wxStaticText(this, wxID_ANY, strLicense, wxDefaultPosition, wxSize(TEXT_WIDTH, 48)));
 	topSizer->Add(license, PROPORTION, wxEXPAND | wxALL, BORDER);
 
 	wxString const strDisclaimer(wxT("Disclaimer:\n   Use the software at your own risk."));

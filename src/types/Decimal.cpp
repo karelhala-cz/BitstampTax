@@ -1,7 +1,7 @@
 //*********************************************************************************************************************
 // Author:	  Karel Hala, hala.karel@gmail.com
-// Copyright: (c) 2021 Karel Hala
-// License:	  
+// Copyright: (c) 2021-2022 Karel Hala
+// License:	  MIT
 //*********************************************************************************************************************
 
 #include "Decimal.h"
@@ -79,19 +79,6 @@ C_Decimal C_Decimal::operator *(C_Decimal const & other) const
 
 C_Decimal C_Decimal::operator *=(C_Decimal const & other)
 {
-/*	C_CurrencyValue otherNormalized (other);
-
-	if (m_E < otherNormalized.m_E)
-	{
-		otherNormalized.Normalize(m_E);
-	}
-	else if (m_E > otherNormalized.m_E)
-	{
-		Normalize(otherNormalized.GetE());
-	}
-
-	assert (GetE() == otherNormalized.GetE);*/
-
 	assert(other.GetE() == 1);
 	m_Value *= other.m_Value;
 
