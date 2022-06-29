@@ -4,17 +4,12 @@
 // License:	  MIT
 //*********************************************************************************************************************
 
-#pragma once
+#include "TimeUtils.h"
 
-// unique IDs,
-// - should be a positive value, negative values and values between wxID_LOWEST and wxID_HIGHEST are occupied by wxWidgets
-enum
+unsigned GetYearFromTimeT(std::time_t const time)
 {
-    ID_FileOpen = 1,
-	ID_AboutDialog,
-	ID_TaxCurrencySettings,
-    ID_ListBoxFile,
-    ID_PairsGrid,
-    ID_ListBoxTaxes,
-	ID_Apply,
-};
+	tm utcTime;
+	localtime_s(&utcTime, &time);
+
+	return 1900 + utcTime.tm_year;
+}

@@ -15,9 +15,9 @@ public:
 	typedef int64_t T_Value;
 
 public:
-	C_Decimal() : m_E(0), m_Value(0) {}
-	C_Decimal(T_Value const value) : m_E(0), m_Value(value) {}
-	C_Decimal(T_Value const value, T_E const e) : m_E(e), m_Value(value) {}
+	C_Decimal() : m_Valid(false), m_E(0), m_Value(0) {}
+	C_Decimal(T_Value const value) : m_Valid(true), m_E(0), m_Value(value) {}
+	C_Decimal(T_Value const value, T_E const e) : m_Valid(true), m_E(e), m_Value(value) {}
 
 	C_Decimal operator -(C_Decimal const & other) const;
 	C_Decimal operator -=(C_Decimal const & other);
@@ -32,9 +32,15 @@ public:
 	bool operator ==(C_Decimal const & other) const;
 	bool operator <=(C_Decimal const & other) const;
 
+	friend std::istream & operator>> (std::istream & in, C_Decimal & value);
+	friend std::ostream & operator<< (std::ostream & out, C_Decimal const & value);
+
 	T_E	GetE() const { return m_E; }
 	
 	void Normalize(T_E const & e);
+
+	bool IsValid() const { return m_Valid; }
+	void SetValid(bool const valid = true) { m_Valid = valid; }
 
 	bool IsZero() const { return m_Value == 0; }
 	void Zero() { m_Value = 0; }
@@ -43,6 +49,9 @@ public:
 	void PrintData(std::ostringstream & str) const;
 
 private:
+	bool			m_Valid;
 	T_E				m_E;
 	T_Value			m_Value;
 };
+
+bool StringToDecimal(char const * const str, C_Decimal & value);

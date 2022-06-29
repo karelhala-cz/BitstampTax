@@ -19,7 +19,7 @@ public:
 
 public:
 	C_CurrencyValue() {}
-	C_CurrencyValue(T_CurrencyType const type) : m_Type(type) {}
+	C_CurrencyValue(T_CurrencyType const type) : m_Type(type), m_Value(0) {}
 	C_CurrencyValue(T_CurrencyType const type, T_Value const value) : m_Type(type), m_Value(value) {}
 	C_CurrencyValue(T_CurrencyType const type, T_Value const value, T_E const e) : m_Type(type), m_Value(value, e) {}
 	C_CurrencyValue(T_CurrencyType const type, C_Decimal const & value) : m_Type(type), m_Value(value) {}

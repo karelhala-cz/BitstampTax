@@ -14,12 +14,15 @@
 #include <string>
 #include <assert.h>
 
+class C_TaxCurrencySettings;
+
+
 class C_TaxFifo
 {
 	typedef std::vector<C_TradeItemMarket const *> T_TradeItems;
 
 public: 
-	C_TaxFifo(T_CurrencyType const & taxCurrency);
+	C_TaxFifo(T_CurrencyType const & originalCurrency, C_TaxCurrencySettings const & taxCurrencySettings);
 
 	bool Process(C_TradeBook const & book);
 
@@ -51,7 +54,9 @@ private:
 	void ProcessPairs();
 
 private:
-	T_CurrencyType m_TaxCurrency;
+	T_CurrencyType m_OriginalCurrency;
+	C_TaxCurrencySettings const & m_TaxCurrencySettings;
+
 	std::vector<C_TradePair> m_Pairs;
 	std::vector<C_Tax> m_Tax;
 	std::string m_ErrorMsg;

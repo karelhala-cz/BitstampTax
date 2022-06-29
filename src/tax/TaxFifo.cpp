@@ -5,13 +5,16 @@
 //*********************************************************************************************************************
 
 #include "TaxFifo.h"
+#include "app/TaxCurrencySettings.h"
 #include "trade_book/TradeItemMarket.h"
+#include "utils/TimeUtils.h"
 #include <map>
 #include <iostream>
 #include <cassert>
 
-C_TaxFifo::C_TaxFifo(T_CurrencyType const & taxCurrency)
-	: m_TaxCurrency(taxCurrency)
+C_TaxFifo::C_TaxFifo(T_CurrencyType const & originalCurrency, C_TaxCurrencySettings const & taxCurrencySettings)
+	: m_OriginalCurrency(originalCurrency)
+	, m_TaxCurrencySettings(taxCurrencySettings)
 {
 }
 
@@ -25,11 +28,13 @@ bool C_TaxFifo::Process(C_TradeBook const & book)
 		C_TradeItemMarket const * const itemMarket (dynamic_cast<C_TradeItemMarket const *>(item.get()));
 		if (itemMarket != nullptr)
 		{
-			C_Tax & taxYear(GetTaxYear(GetYear(itemMarket->GetTime())));
+			C_Tax::T_Year const year(GetYear(itemMarket->GetTime()));
+			C_Tax & taxYear(GetTaxYear(year));
 
 			if (itemMarket->IsFeeValid())
 			{
-				taxYear.AddExpenditure(itemMarket->GetFee());
+				C_CurrencyValue feeInTaxCurrency(m_TaxCurrencySettings.ConvertToTaxCurrency(itemMarket->GetFee(), year));
+				taxYear.AddExpenditure(itemMarket->GetFee(), feeInTaxCurrency);
 			}
 
 			switch (itemMarket->GetTradeType())
@@ -67,12 +72,7 @@ bool C_TaxFifo::Process(C_TradeBook const & book)
 
 C_Tax::T_Year C_TaxFifo::GetYear(std::time_t const time)
 {
-	tm utcTime;
-	localtime_s(&utcTime, &time);
-
-	C_Tax::T_Year const tradeYear(1900 + utcTime.tm_year);
-
-	return tradeYear;
+	return GetYearFromTimeT(time);
 }
 
 C_Tax & C_TaxFifo::GetTaxYear(C_Tax::T_Year const year)
@@ -85,7 +85,7 @@ C_Tax & C_TaxFifo::GetTaxYear(C_Tax::T_Year const year)
 		}
 	}
 
-	m_Tax.emplace_back(year, m_TaxCurrency);
+	m_Tax.emplace_back(year, m_OriginalCurrency, m_TaxCurrencySettings.GetCurrencyType());
 
 	return m_Tax.back();
 }
@@ -246,10 +246,16 @@ void C_TaxFifo::ProcessPairs()
 {
 	for (C_TradePair const & pair : m_Pairs)
 	{
-		C_Tax & taxYear(GetTaxYear(GetYear(pair.GetSellTime())));
+		C_Tax::T_Year year(GetYear(pair.GetSellTime()));
+		C_Tax & taxYear(GetTaxYear(year));
 
-		taxYear.AddExpenditure(pair.GetBuyPrice() * pair.GetAmount().GetValue());
-		taxYear.AddReceipt(pair.GetSellPrice() * pair.GetAmount().GetValue());
+		C_CurrencyValue const expediture(pair.GetBuyPrice() * pair.GetAmount().GetValue());
+		C_CurrencyValue const expeditureInTaxCurrency(m_TaxCurrencySettings.ConvertToTaxCurrency(expediture, year));
+		taxYear.AddExpenditure(expediture, expeditureInTaxCurrency);
+
+		C_CurrencyValue const receipt(pair.GetSellPrice() * pair.GetAmount().GetValue());
+		C_CurrencyValue const receiptInTaxCurrency(m_TaxCurrencySettings.ConvertToTaxCurrency(receipt, year));
+		taxYear.AddReceipt(receipt, receiptInTaxCurrency);
 	}
 }
 

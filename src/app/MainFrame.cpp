@@ -7,16 +7,32 @@
 #include "MainFrame.h"
 #include "Ids.h"
 #include "AboutDialog.h"
+#include "TaxCurrencySettings.h"
+#include "TaxCurrencySettingsDialog.h"
 #include <trade_book/TradeBook.h>
 #include <trade_book/TradeItemMarket.h>
 #include <tax/TaxFifo.h>
 #include <input/FileReader.h>
 #include <types/Decimal.h>
+#include <utils/TimeUtils.h>
 
 #include <wx/grid.h>
+#include <wx/stdpaths.h>
 
 #include <iomanip>      // std::put_time
 
+//static
+char const * const C_MainFrame::FILE_NAME_TAX_CURRENCY_SETTINGS = "TaxCurrencySettings.txt";
+
+//static
+std::string C_MainFrame::GetTaxCurrencySettingsDefaultFilePath()
+{
+	std::string filename (wxStandardPaths::Get().GetUserDataDir());
+	filename += "\\";
+	filename += FILE_NAME_TAX_CURRENCY_SETTINGS;
+
+	return filename;
+}
 
 C_MainFrame::C_MainFrame()
     : wxFrame(NULL, wxID_ANY, "Bitstamp Tax", wxDefaultPosition, wxSize(1024, 768))
@@ -24,9 +40,11 @@ C_MainFrame::C_MainFrame()
 	, m_GridPairs(nullptr)
 	, m_GridFees(nullptr)
     , m_GridTaxes(nullptr)
+	, m_TaxCurrencySettings(std::make_unique<C_TaxCurrencySettings>())
 {
 	wxMenu * const menuFile = new wxMenu;
     menuFile->Append(ID_FileOpen, "&Open...\tCtrl-O", "Open File...");
+	menuFile->Append(ID_TaxCurrencySettings, "Tax Currency Settings...");
     menuFile->Append(wxID_EXIT);
     
     wxMenu * const menuHelp = new wxMenu;
@@ -58,17 +76,25 @@ C_MainFrame::C_MainFrame()
 	wxStaticText * const captionPairs (new wxStaticText(this, wxID_ANY, wxT("Trade pairs:")));
 	captionPairs->SetFont(captionFont);
 	pairsGridSizer->Add(captionPairs, 0, wxALIGN_LEFT);
-	m_GridPairs = new wxGrid(this, ID_PairsGrid, wxPoint(0, 0), FromDIP(wxSize(800, 70)));	//The size definition fixes a weird row overflow out of sizer border
+	m_GridPairs = new wxGrid(this, ID_PairsGrid, wxPoint(0, 0), FromDIP(wxSize(1200, 70)));	//The size definition fixes a weird row overflow out of sizer border
 	m_GridPairs->EnableEditing(false);
 	m_GridPairs->SetDefaultCellAlignment(wxALIGN_RIGHT, wxALIGN_TOP);
 	
-	m_GridPairs->CreateGrid(0, 6);
-	m_GridPairs->SetColLabelValue(0, "Sell Datetime");
-	m_GridPairs->SetColLabelValue(1, "Sell Price");
-	m_GridPairs->SetColLabelValue(2, "Amount");
-	m_GridPairs->SetColLabelValue(3, "Buy Datetime");
-	m_GridPairs->SetColLabelValue(4, "Buy Price");
-	m_GridPairs->SetColLabelValue(5, "P/L");
+	m_GridPairs->CreateGrid(0, static_cast<int>(E_GridPairsCollType::_Count));
+	m_GridPairs->SetColLabelValue(static_cast<int>(E_GridPairsCollType::SellDatetime), "Sell Datetime");
+	m_GridPairs->SetColLabelValue(static_cast<int>(E_GridPairsCollType::SellPrice), "Sell Price");
+	m_GridPairs->SetColLabelValue(static_cast<int>(E_GridPairsCollType::Amount), "Amount");
+	m_GridPairs->SetColLabelValue(static_cast<int>(E_GridPairsCollType::BuyDatetime), "Buy Datetime");
+	m_GridPairs->SetColLabelValue(static_cast<int>(E_GridPairsCollType::BuyPrice), "Buy Price");
+	m_GridPairs->SetColLabelValue(static_cast<int>(E_GridPairsCollType::Proceeds), "Proceeds");
+	m_GridPairs->SetColLabelValue(static_cast<int>(E_GridPairsCollType::Cost), "Cost");
+	m_GridPairs->SetColLabelValue(static_cast<int>(E_GridPairsCollType::PnL), "P/L");
+	m_GridPairs->SetColLabelValue(static_cast<int>(E_GridPairsCollType::SellCurrencyRate), "Sell Cur. Rate");
+	m_GridPairs->SetColLabelValue(static_cast<int>(E_GridPairsCollType::ProceedsInTaxCurrency), "Proceeds [Tax cur.]");
+	m_GridPairs->SetColLabelValue(static_cast<int>(E_GridPairsCollType::BuyCurrencyRate), "Buy Cur. Rate");
+	m_GridPairs->SetColLabelValue(static_cast<int>(E_GridPairsCollType::CostInTaxCurrency), "Cost [Tax cur.]");
+	m_GridPairs->SetColLabelValue(static_cast<int>(E_GridPairsCollType::PnLInTaxCurrency), "P/L [Tax cur.]");
+	m_GridPairs->Fit();
 	pairsGridSizer->Add(m_GridPairs, 1, wxEXPAND | wxALL);
 	topSizer->Add(pairsGridSizer, 1, wxEXPAND | wxALL);
 
@@ -80,9 +106,11 @@ C_MainFrame::C_MainFrame()
     m_GridFees = new wxGrid(this, ID_PairsGrid, wxPoint(0, 0), FromDIP(wxSize(800, 70)));
 	m_GridFees->EnableEditing(false);
 	m_GridFees->SetDefaultCellAlignment(wxALIGN_RIGHT, wxALIGN_TOP);
-	m_GridFees->CreateGrid(0, 2);
-	m_GridFees->SetColLabelValue(0, "Datetime");
-	m_GridFees->SetColLabelValue(1, "Fee");
+	m_GridFees->CreateGrid(0, static_cast<int>(E_GridFeesCollType::_Count));
+	m_GridFees->SetColLabelValue(static_cast<int>(E_GridFeesCollType::Datetime), "Datetime");
+	m_GridFees->SetColLabelValue(static_cast<int>(E_GridFeesCollType::Fee), "Fee");
+	m_GridFees->SetColLabelValue(static_cast<int>(E_GridFeesCollType::FeeCurrencyRate), "Fee Cur. Rate");
+	m_GridFees->SetColLabelValue(static_cast<int>(E_GridFeesCollType::FeeInTaxCurrency), "Fee [Tax cur.]");
 	feesGridSizer->Add(m_GridFees, 1, wxEXPAND | wxALL);
 	topSizer->Add(feesGridSizer, 1, wxEXPAND | wxALL);
 
@@ -95,11 +123,14 @@ C_MainFrame::C_MainFrame()
 	m_GridTaxes->EnableEditing(false);
 	m_GridTaxes->SetDefaultCellAlignment(wxALIGN_RIGHT, wxALIGN_TOP);
 	
-	m_GridTaxes->CreateGrid(0, 4);
-	m_GridTaxes->SetColLabelValue(0, "Year");
-	m_GridTaxes->SetColLabelValue(1, "Expenditures");
-	m_GridTaxes->SetColLabelValue(2, "Receipts");
-	m_GridTaxes->SetColLabelValue(3, "P/L");
+	m_GridTaxes->CreateGrid(0, static_cast<int>(E_GridTaxesCollType::_Count));
+	m_GridTaxes->SetColLabelValue(static_cast<int>(E_GridTaxesCollType::Year), "Year");
+	m_GridTaxes->SetColLabelValue(static_cast<int>(E_GridTaxesCollType::Expenditures), "Expenditures");
+	m_GridTaxes->SetColLabelValue(static_cast<int>(E_GridTaxesCollType::Receipts), "Receipts");
+	m_GridTaxes->SetColLabelValue(static_cast<int>(E_GridTaxesCollType::PnL), "P/L");
+	m_GridTaxes->SetColLabelValue(static_cast<int>(E_GridTaxesCollType::ExpendituresInTaxCurrency), "Expenditures [Tax cur.]");
+	m_GridTaxes->SetColLabelValue(static_cast<int>(E_GridTaxesCollType::ReceiptsInTaxCurrency), "Receipts [Tax cur.]");
+	m_GridTaxes->SetColLabelValue(static_cast<int>(E_GridTaxesCollType::PnLInTaxCurrency), "P/L [Tax cur.]");
     taxesGridSizer->Add(m_GridTaxes, 1, wxEXPAND | wxALL);
 
 	topSizer->Add(taxesGridSizer, 1, wxEXPAND | wxALL);
@@ -107,9 +138,12 @@ C_MainFrame::C_MainFrame()
 	this->SetSizer(topSizer);
 
     Bind(wxEVT_MENU, &C_MainFrame::OnOpenFile, this, ID_FileOpen);
+	Bind(wxEVT_MENU, &C_MainFrame::OnTaxCurrencySettings, this, ID_TaxCurrencySettings);
     Bind(wxEVT_MENU, &C_MainFrame::OnExit, this, wxID_EXIT);
 	Bind(wxEVT_MENU, &C_MainFrame::OnAbout, this, wxID_ABOUT);
 	Bind(wxEVT_LISTBOX,  &C_MainFrame::OnListBoxFile, this, ID_ListBoxFile);
+
+	LoadTaxCurrencySettings();
 }
 
 void C_MainFrame::OnOpenFile(wxCommandEvent & event)
@@ -139,7 +173,7 @@ void C_MainFrame::OnOpenFile(wxCommandEvent & event)
 				if ((m_TradeBook != nullptr) && !m_TradeBook->IsEmpty())
 				{
 					T_CurrencyType const taxCurrency(m_TradeBook->AssessUserCurrency());
-					m_TaxFifo = std::make_unique<C_TaxFifo>(taxCurrency);
+					m_TaxFifo = std::make_unique<C_TaxFifo>(taxCurrency, *m_TaxCurrencySettings);
 					if (!m_TaxFifo->Process(*m_TradeBook))
 					{
 						std::string errorMsg;
@@ -177,6 +211,15 @@ void C_MainFrame::OnOpenFile(wxCommandEvent & event)
         default:
             assert(0);
     }
+}
+
+void C_MainFrame::OnTaxCurrencySettings(wxCommandEvent & event)
+{
+	C_TaxCurrencySettingsDialog taxCurrencySettingsDialog(*m_TaxCurrencySettings);
+	if (taxCurrencySettingsDialog.ShowModal() == wxID_OK)
+	{
+		SaveTaxCurrencySettings();
+	}
 }
 
 void C_MainFrame::OnExit(wxCommandEvent & event)
@@ -240,18 +283,35 @@ void C_MainFrame::UpdateGridPairs()
 		int rowCounter(0);
 		m_TaxFifo->EnumerateTradePairs([this, &rowCounter](C_TradePair const & tradePair) -> void
 		{
-			m_GridPairs->SetCellValue(rowCounter, 0, GetDateTimeString(tradePair.GetSellTime()));
-			m_GridPairs->SetCellValue(rowCounter, 1, tradePair.GetSellPrice().GetAsString());
+			m_GridPairs->SetCellValue(rowCounter, static_cast<int>(E_GridPairsCollType::SellDatetime), GetDateTimeString(tradePair.GetSellTime()));
+			m_GridPairs->SetCellValue(rowCounter, static_cast<int>(E_GridPairsCollType::SellPrice), tradePair.GetSellPrice().GetAsString());
 			
-			m_GridPairs->SetCellValue(rowCounter, 2, tradePair.GetAmount().GetAsString());
+			m_GridPairs->SetCellValue(rowCounter, static_cast<int>(E_GridPairsCollType::Amount), tradePair.GetAmount().GetAsString());
 			
-			m_GridPairs->SetCellValue(rowCounter, 3, GetDateTimeString(tradePair.GetBuyTime()));
-			m_GridPairs->SetCellValue(rowCounter, 4, tradePair.GetBuyPrice().GetAsString());
+			m_GridPairs->SetCellValue(rowCounter, static_cast<int>(E_GridPairsCollType::BuyDatetime), GetDateTimeString(tradePair.GetBuyTime()));
+			m_GridPairs->SetCellValue(rowCounter, static_cast<int>(E_GridPairsCollType::BuyPrice), tradePair.GetBuyPrice().GetAsString());
+			
+			C_CurrencyValue const proceeds(tradePair.GetSellPrice() * tradePair.GetAmount().GetValue());
+			m_GridPairs->SetCellValue(rowCounter, static_cast<int>(E_GridPairsCollType::Proceeds), proceeds.GetAsString());
 
-			C_CurrencyValue const expenditure(tradePair.GetBuyPrice() * tradePair.GetAmount().GetValue());
-			C_CurrencyValue const receipt(tradePair.GetSellPrice() * tradePair.GetAmount().GetValue());
-			C_CurrencyValue const profitOrLoss(receipt - expenditure);
-			m_GridPairs->SetCellValue(rowCounter, 5, profitOrLoss.GetAsString());
+			C_CurrencyValue const cost(tradePair.GetBuyPrice() * tradePair.GetAmount().GetValue());
+			m_GridPairs->SetCellValue(rowCounter, static_cast<int>(E_GridPairsCollType::Cost), cost.GetAsString());
+
+			C_CurrencyValue const profitOrLoss(proceeds - cost);
+			m_GridPairs->SetCellValue(rowCounter, static_cast<int>(E_GridPairsCollType::PnL), profitOrLoss.GetAsString());
+
+			C_Decimal sellCurrencyRate;
+			C_CurrencyValue const proceedsInTaxCurrency(ConvertToTaxCurrency(proceeds, tradePair.GetSellTime(), sellCurrencyRate));
+			m_GridPairs->SetCellValue(rowCounter, static_cast<int>(E_GridPairsCollType::SellCurrencyRate), sellCurrencyRate.GetAsString());
+			m_GridPairs->SetCellValue(rowCounter, static_cast<int>(E_GridPairsCollType::ProceedsInTaxCurrency), proceedsInTaxCurrency.GetAsString());
+
+			C_Decimal buyCurrencyRate;
+			C_CurrencyValue const costInTaxCurrency(ConvertToTaxCurrency(cost, tradePair.GetBuyTime(), buyCurrencyRate));
+			m_GridPairs->SetCellValue(rowCounter, static_cast<int>(E_GridPairsCollType::BuyCurrencyRate), buyCurrencyRate.GetAsString());
+			m_GridPairs->SetCellValue(rowCounter, static_cast<int>(E_GridPairsCollType::CostInTaxCurrency), costInTaxCurrency.GetAsString());
+
+			C_CurrencyValue const profitOrLossInTaxCurrency(proceedsInTaxCurrency - costInTaxCurrency);
+			m_GridPairs->SetCellValue(rowCounter, static_cast<int>(E_GridPairsCollType::PnLInTaxCurrency), profitOrLossInTaxCurrency.GetAsString());
 
 			rowCounter++;
 		});
@@ -284,8 +344,13 @@ void C_MainFrame::UpdateGridFees()
 				C_CurrencyValue fee;
 				if (itemMarket->IsFeeValid())
 				{
-					m_GridFees->SetCellValue(rowCounter, 0, GetDateTimeString(itemMarket->GetTime()));
-					m_GridFees->SetCellValue(rowCounter, 1, itemMarket->GetFee().GetAsString());
+					m_GridFees->SetCellValue(rowCounter, static_cast<int>(E_GridFeesCollType::Datetime), GetDateTimeString(itemMarket->GetTime()));
+					m_GridFees->SetCellValue(rowCounter, static_cast<int>(E_GridFeesCollType::Fee), itemMarket->GetFee().GetAsString());
+
+					C_Decimal currencyRate;
+					C_CurrencyValue const feeInTaxCurrency(ConvertToTaxCurrency(itemMarket->GetFee(), itemMarket->GetTime(), currencyRate));
+					m_GridFees->SetCellValue(rowCounter, static_cast<int>(E_GridFeesCollType::FeeCurrencyRate), currencyRate.GetAsString());
+					m_GridFees->SetCellValue(rowCounter, static_cast<int>(E_GridFeesCollType::FeeInTaxCurrency), feeInTaxCurrency.GetAsString());
 
 					rowCounter++;
 				}
@@ -318,10 +383,15 @@ void C_MainFrame::UpdateGridTaxes()
 		int rowCounter(0);
 		m_TaxFifo->EnumerateTaxes([this, &rowCounter](C_Tax const & tax) -> void
 		{
-			m_GridTaxes->SetCellValue(rowCounter, 0, wxString::Format("%d", tax.GetYear()));
-			m_GridTaxes->SetCellValue(rowCounter, 1, tax.GetExpenditures().GetAsString());
-			m_GridTaxes->SetCellValue(rowCounter, 2, tax.GetReceipts().GetAsString());
-			m_GridTaxes->SetCellValue(rowCounter, 3, tax.GetProfit().GetAsString());
+			m_GridTaxes->SetCellValue(rowCounter, static_cast<int>(E_GridTaxesCollType::Year), wxString::Format("%d", tax.GetYear()));
+			
+			m_GridTaxes->SetCellValue(rowCounter, static_cast<int>(E_GridTaxesCollType::Expenditures), tax.GetExpenditures().GetAsString());
+			m_GridTaxes->SetCellValue(rowCounter, static_cast<int>(E_GridTaxesCollType::Receipts), tax.GetReceipts().GetAsString());
+			m_GridTaxes->SetCellValue(rowCounter, static_cast<int>(E_GridTaxesCollType::PnL), tax.GetProfit().GetAsString());
+
+			m_GridTaxes->SetCellValue(rowCounter, static_cast<int>(E_GridTaxesCollType::ExpendituresInTaxCurrency), tax.GetExpendituresInTaxCurrency().GetAsString());
+			m_GridTaxes->SetCellValue(rowCounter, static_cast<int>(E_GridTaxesCollType::ReceiptsInTaxCurrency), tax.GetReceiptsInTaxCurrency().GetAsString());
+			m_GridTaxes->SetCellValue(rowCounter, static_cast<int>(E_GridTaxesCollType::PnLInTaxCurrency), tax.GetProfitInTaxCurrency().GetAsString());
 
 			rowCounter++;
 		});
@@ -444,4 +514,42 @@ void C_MainFrame::UpdateGridFeesSelection(size_t const selectedFileLine)
 			m_GridFees->MakeCellVisible(bottomRight);
 		}
 	}
+}
+
+void C_MainFrame::LoadTaxCurrencySettings()
+{
+	m_TaxCurrencySettings->LoadFile(GetTaxCurrencySettingsDefaultFilePath());
+}
+
+void C_MainFrame::SaveTaxCurrencySettings()
+{
+	m_TaxCurrencySettings->WriteFile(GetTaxCurrencySettingsDefaultFilePath());
+}
+
+C_CurrencyValue C_MainFrame::ConvertToTaxCurrency(C_CurrencyValue const & value, time_t const time) const
+{
+	C_CurrencyValue retVal (value);
+
+	if (!m_TaxCurrencySettings->GetCurrencyType().empty())
+	{
+		retVal = m_TaxCurrencySettings->ConvertToTaxCurrency(value, GetYearFromTimeT(time));
+	}
+
+	return retVal;
+}
+
+C_CurrencyValue C_MainFrame::ConvertToTaxCurrency(C_CurrencyValue const & value, time_t const time, C_Decimal & rate) const
+{
+	C_CurrencyValue retVal (value);
+
+	if (m_TaxCurrencySettings->GetCurrencyType().empty())
+	{
+		rate = C_Decimal(1.f, 0);	//Tax currency is not specified, keep the original value and rate 1.0
+	}
+	else
+	{
+		retVal = m_TaxCurrencySettings->ConvertToTaxCurrency(value, GetYearFromTimeT(time), rate);
+	}
+
+	return retVal;
 }
