@@ -18,6 +18,10 @@ set(SRC_FILES
 	InputParams.cpp
 	AboutDialog.h
 	AboutDialog.cpp
+	TaxCurrencySettingsDialog.h
+	TaxCurrencySettingsDialog.cpp
+	TaxCurrencySettings.h
+	TaxCurrencySettings.cpp
 	Version.h
     )
 	
