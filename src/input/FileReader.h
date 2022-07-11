@@ -43,7 +43,7 @@ public:
 	std::string const & GetErrorMsg() const { return m_ErrorMsg; }
 
 	template<typename Fn>
-	void EnumerateLines(Fn & fn) const;
+	void EnumerateLines(Fn const & fn) const;
 
 	T_TradeItems && MoveTradeItems() { return std::move(m_TradeItems); }
 
@@ -74,7 +74,7 @@ private:
 };
 
 template<typename Fn>
-void C_FileReader::EnumerateLines(Fn & fn) const
+void C_FileReader::EnumerateLines(Fn const & fn) const
 {
 	for (std::string const & line : m_FileLines)
 	{

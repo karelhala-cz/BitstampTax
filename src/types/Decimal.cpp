@@ -42,7 +42,7 @@ C_Decimal C_Decimal::operator -=(C_Decimal const & other)
 		}
 		else
 		{
-			SetValid(false);
+			Invalidate();
 		}
 	}
 	
@@ -65,7 +65,7 @@ C_Decimal C_Decimal::operator +=(C_Decimal const & other)
 		}
 		else
 		{
-			SetValid(false);
+			Invalidate();
 		}
 	}
 	
@@ -127,7 +127,7 @@ C_Decimal C_Decimal::operator *=(C_Decimal const & other)
 		}
 		else
 		{
-			SetValid(false);
+			Invalidate();
 		}
 	}
 

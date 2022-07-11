@@ -10,25 +10,46 @@
 
 C_CurrencyValue C_CurrencyValue::operator -(C_CurrencyValue const & other) const
 {
-	assert(m_Type == other.m_Type);
+	C_CurrencyValue retVal;
+
+	if (m_Type == other.m_Type)
+	{
+		retVal = C_CurrencyValue(m_Type, m_Value - other.GetValue());
+	}
+	else
+	{
+		assert(false);
+	}
 	
-	return C_CurrencyValue(m_Type, m_Value - other.GetValue());
+	return retVal;
 }
 
 C_CurrencyValue C_CurrencyValue::operator -=(C_CurrencyValue const & other)
 {
-	assert(m_Type == other.m_Type);
-	
-	m_Value -= other.GetValue();
+	if (m_Type == other.m_Type)
+	{
+		m_Value -= other.GetValue();
+	}
+	else
+	{
+		assert(false);
+		m_Value.Invalidate();
+	}
 	
 	return *this;
 }
 
 C_CurrencyValue C_CurrencyValue::operator +=(C_CurrencyValue const & other)
 {
-	assert(m_Type == other.m_Type);
-
-	m_Value += other.GetValue();
+	if (m_Type == other.m_Type)
+	{
+		m_Value += other.GetValue();
+	}
+	else
+	{
+		assert(false);
+		m_Value.Invalidate();
+	}
 	
 	return *this;
 }

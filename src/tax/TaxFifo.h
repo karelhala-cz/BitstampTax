@@ -32,10 +32,10 @@ public:
 	size_t GetTaxCount() const { return m_Tax.size(); }
 
 	template<typename Fn>
-	void EnumerateTradePairs(Fn & fn) const;
+	void EnumerateTradePairs(Fn const & fn) const;
 
 	template<typename Fn>
-	void EnumerateTaxes(Fn & fn) const;
+	void EnumerateTaxes(Fn const & fn) const;
 
 	void PrintTax(std::ostringstream & str);
 
@@ -63,7 +63,7 @@ private:
 };
 
 template<typename Fn>
-void C_TaxFifo::EnumerateTradePairs(Fn & fn) const
+void C_TaxFifo::EnumerateTradePairs(Fn const & fn) const
 {
 	for (C_TradePair const & pair : m_Pairs)
 	{
@@ -72,7 +72,7 @@ void C_TaxFifo::EnumerateTradePairs(Fn & fn) const
 }
 
 template<typename Fn>
-void C_TaxFifo::EnumerateTaxes(Fn & fn) const
+void C_TaxFifo::EnumerateTaxes(Fn const & fn) const
 {
 	for (C_Tax const & tax : m_Tax)
 	{

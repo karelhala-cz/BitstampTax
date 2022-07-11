@@ -40,6 +40,7 @@ target_link_libraries (BitstampTax utils input types currency trade_book tax)
 # Creates a folder "executables" and adds target 
 # project (BitstampTax.vcproj) under it
 set_property(TARGET PROPERTY FOLDER "exe")
+set_property(TARGET BitstampTax PROPERTY CXX_STANDARD 20)
 set_property(TARGET BitstampTax PROPERTY VS_DPI_AWARE "PerMonitor")
  
 # Properties->General->Output Directory

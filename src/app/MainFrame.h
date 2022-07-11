@@ -7,6 +7,8 @@
 #pragma once
 #include <wx/wx.h>
 
+#include <filesystem>
+
 
 class C_TaxCurrencySettings;
 class C_FileReader;
@@ -21,7 +23,8 @@ class C_MainFrame : public wxFrame
 {
 	static char const * const FILE_NAME_TAX_CURRENCY_SETTINGS;
 
-	static std::string C_MainFrame::GetTaxCurrencySettingsDefaultFilePath();
+	static bool EnsureDirExists(std::filesystem::path const & dir);	
+	static std::string GetTaxCurrencySettingsDefaultFilePath();
 
 	enum class E_GridPairsCollType
 	{

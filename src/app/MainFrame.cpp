@@ -25,6 +25,15 @@
 char const * const C_MainFrame::FILE_NAME_TAX_CURRENCY_SETTINGS = "TaxCurrencySettings.txt";
 
 //static
+bool C_MainFrame::EnsureDirExists(std::filesystem::path const & dir)
+{
+	std::error_code ec;
+	bool const created (std::filesystem::create_directory(dir, ec));
+	
+	return created || !ec;	//Created or already exists
+}
+
+//static
 std::string C_MainFrame::GetTaxCurrencySettingsDefaultFilePath()
 {
 	std::string filename (wxStandardPaths::Get().GetUserDataDir());
@@ -523,7 +532,18 @@ void C_MainFrame::LoadTaxCurrencySettings()
 
 void C_MainFrame::SaveTaxCurrencySettings()
 {
-	m_TaxCurrencySettings->WriteFile(GetTaxCurrencySettingsDefaultFilePath());
+	wxString const & pathUserDataDir (wxStandardPaths::Get().GetUserDataDir());
+	std::filesystem::path dir (pathUserDataDir.ToStdString());
+	if (EnsureDirExists(dir))
+	{
+		m_TaxCurrencySettings->WriteFile(GetTaxCurrencySettingsDefaultFilePath());
+	}
+	else
+	{
+		wxString errorStr(wxString::Format("Failed to create user data directory '%s'", pathUserDataDir.c_str()));
+		wxMessageDialog * dial = new wxMessageDialog(nullptr, errorStr, wxT("Error"), wxOK | wxICON_ERROR);
+		dial->ShowModal();
+	}
 }
 
 C_CurrencyValue C_MainFrame::ConvertToTaxCurrency(C_CurrencyValue const & value, time_t const time) const

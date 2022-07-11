@@ -7,6 +7,7 @@
 #pragma once
 
 #include "TradeItemFwd.h"
+#include "TradeItemMarket.h"
 #include <currency/CurrencyType.h>
 #include <vector>
 #include <memory>

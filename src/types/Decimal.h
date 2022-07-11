@@ -40,7 +40,8 @@ public:
 	void Normalize(T_E const & e);
 
 	bool IsValid() const { return m_Valid; }
-	void SetValid(bool const valid = true) { m_Valid = valid; }
+	void SetValid() { m_Valid = true; }
+	void Invalidate() { m_Valid = false; }
 
 	bool IsZero() const { return m_Value == 0; }
 	void Zero() { m_Value = 0; }
