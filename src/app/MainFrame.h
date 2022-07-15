@@ -21,10 +21,14 @@ class wxGrid;
 
 class C_MainFrame : public wxFrame
 {
+	static char const * const FILE_NAME_USER_LOG;
 	static char const * const FILE_NAME_TAX_CURRENCY_SETTINGS;
 
 	static bool EnsureDirExists(std::filesystem::path const & dir);	
+	
+	static std::string GetUserLogPath();
 	static std::string GetTaxCurrencySettingsDefaultFilePath();
+
 
 	enum class E_GridPairsCollType
 	{

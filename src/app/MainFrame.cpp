@@ -15,6 +15,7 @@
 #include <input/FileReader.h>
 #include <types/Decimal.h>
 #include <utils/TimeUtils.h>
+#include <utils/Log.h>
 
 #include <wx/grid.h>
 #include <wx/stdpaths.h>
@@ -22,6 +23,7 @@
 #include <iomanip>      // std::put_time
 
 //static
+char const * const C_MainFrame::FILE_NAME_USER_LOG = "Log.txt";
 char const * const C_MainFrame::FILE_NAME_TAX_CURRENCY_SETTINGS = "TaxCurrencySettings.txt";
 
 //static
@@ -31,6 +33,16 @@ bool C_MainFrame::EnsureDirExists(std::filesystem::path const & dir)
 	bool const created (std::filesystem::create_directory(dir, ec));
 	
 	return created || !ec;	//Created or already exists
+}
+
+//static
+std::string C_MainFrame::GetUserLogPath()
+{
+	std::string filename (wxStandardPaths::Get().GetUserDataDir());
+	filename += "\\";
+	filename += FILE_NAME_USER_LOG;
+
+	return filename;
 }
 
 //static
@@ -51,6 +63,8 @@ C_MainFrame::C_MainFrame()
     , m_GridTaxes(nullptr)
 	, m_TaxCurrencySettings(std::make_unique<C_TaxCurrencySettings>())
 {
+	T_AppLog::GetInstance().Init(C_MainFrame::GetUserLogPath());
+
 	wxMenu * const menuFile = new wxMenu;
     menuFile->Append(ID_FileOpen, "&Open...\tCtrl-O", "Open File...");
 	menuFile->Append(ID_TaxCurrencySettings, "Tax Currency Settings...");
@@ -185,26 +199,30 @@ void C_MainFrame::OnOpenFile(wxCommandEvent & event)
 					m_TaxFifo = std::make_unique<C_TaxFifo>(taxCurrency, *m_TaxCurrencySettings);
 					if (!m_TaxFifo->Process(*m_TradeBook))
 					{
-						std::string errorMsg;
+						std::string errorMsg = "Tax computation failed, probably incomplete data has been passed.";
 						if (!m_TaxFifo->GetErrorMsg().empty())
 						{
-							errorMsg = " Error: ";
+							errorMsg += " (";
 							errorMsg += m_TaxFifo->GetErrorMsg();
+							errorMsg += ")";
 						}
-						wxLogError("Tax computation failed, probably incomplete data has been passed.%s", errorMsg);
+						T_AppLog::GetInstance().LogError(errorMsg, true);
 						m_TaxFifo = nullptr;
 					}
 				}
             }
             else
             {
-				std::string errorMsg;
+				std::string errorMsg = "Cannot read file '";
+				errorMsg += openFileDialog.GetPath();
+				errorMsg += "'";
 				if (!m_FileReader->GetErrorMsg().empty())
 				{
-					errorMsg = " Error: ";
+					errorMsg += " (";
 					errorMsg += m_FileReader->GetErrorMsg();
+					errorMsg += ")";
 				}
-                wxLogError("Cannot read file '%s'.%s", openFileDialog.GetPath(), errorMsg);
+                T_AppLog::GetInstance().LogError(errorMsg, true);
 				m_FileReader = nullptr;
             }
 

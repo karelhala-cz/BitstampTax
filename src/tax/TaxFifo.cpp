@@ -131,7 +131,7 @@ bool C_TaxFifo::FindPairs(T_TradeItems const & buys, T_TradeItems const & sells)
 			if (itBuyItemPerType == buyItemPerType.end())
 			{
 				error = true;
-				m_ErrorMsg += "Can not assess buy-sell pairs!\n";
+				m_ErrorMsg += "Can not assess buy-sell pairs!";
 				break;
 			}
 
@@ -171,7 +171,7 @@ bool C_TaxFifo::FindPairs(T_TradeItems const & buys, T_TradeItems const & sells)
 						if (!sellAmountToProcess.IsZero())
 						{
 							error = true;
-							m_ErrorMsg += "Can not assess buy-sell pairs!\n";
+							m_ErrorMsg += "Can not assess buy-sell pairs!";
 						}
 					}
 				}

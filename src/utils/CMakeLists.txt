@@ -14,7 +14,10 @@ file (GLOB UTILS_SOURCES
 source_group("" FILES ${UTILS_SOURCES})
  
 # Properties->C/C++->General->Additional Include Directories
-include_directories (.)
+include_directories ($ENV{WXWIN}/include $ENV{WXWIN}/include/msvc .)
+ADD_DEFINITIONS(-DUNICODE)
+ADD_DEFINITIONS(-D_UNICODE)
+
  
 add_library(utils STATIC ${UTILS_SOURCES})
  
